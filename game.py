@@ -16,7 +16,7 @@ def rock_paper_scissors(player):
         print(f"\n🎯 راند {round_number} از {rounds}")
 
         while True:
-            player_choice = input("سنگ، کاغذ یا قیچی؟ ").strip()
+            player_choice = "سنگ"
 
             if player_choice in choices:
                 break
@@ -66,7 +66,7 @@ def guess_number(player):
 
     while True:
         try:
-            guess = int(input("یک عدد بین 1 تا 100 حدس بزن: "))
+            guess = 50
             attempts += 1
 
             if guess < number:
