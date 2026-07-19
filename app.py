@@ -12,3 +12,4 @@ def home():
 async def webhook(data: dict):
     print(data)
     return {"ok": True}
+# Render Redeploy
