@@ -3,7 +3,7 @@ from player import Player
 from database_sql import add_player, get_player
 
 
-name = input("🎮 اسم بازیکنت رو وارد کن: ")
+name = "TAHA"
 
 data = get_player(name)
 
