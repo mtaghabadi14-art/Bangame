@@ -9,7 +9,7 @@ def rock_paper_scissors(player):
     player_score = 0
     bot_score = 0
 
-    rounds = int(input("چند راند بازی کنیم؟ "))
+    rounds = 3
 
     for round_number in range(1, rounds + 1):
 
