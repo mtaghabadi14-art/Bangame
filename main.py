@@ -51,7 +51,7 @@ while True:
     print("4️⃣ پروفایل")
     print("5️⃣ خروج")
 
-    choice = input("\nانتخاب کن: ")
+    choice = "1"
 
     if choice == "1":
         rock_paper_scissors(player)
