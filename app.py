@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from rubika import send_message
+from rubika import send_message, send_keypad
 from database import create_tables, add_user, get_user
 
 
@@ -24,10 +24,8 @@ async def receive_update(request: Request):
 
     data = await request.json()
 
-
     print("NEW UPDATE:")
     print(data)
-
 
 
     try:
@@ -41,10 +39,13 @@ async def receive_update(request: Request):
             chat_id = update.get("chat_id")
 
 
-            text = update.get(
+            message = update.get(
                 "new_message",
                 {}
-            ).get(
+            )
+
+
+            text = message.get(
                 "text",
                 ""
             )
@@ -54,40 +55,24 @@ async def receive_update(request: Request):
 
 
 
+            # ساخت کاربر
+            if get_user(chat_id) is None:
+                add_user(chat_id)
+
+
+
             if text == "/start":
 
 
-                user = get_user(chat_id)
-
-
-                if user is None:
-
-                    add_user(chat_id)
-
-
-                    send_message(
-                        chat_id,
-                        "🎮 خوش آمدی به Bangame!\n\n"
-                        "✅ حساب تو ساخته شد\n"
-                        "🪙 1000 سکه هدیه گرفتی\n"
-                        "⭐ Level: 1\n"
-                        "✨ XP: 0\n\n"
-                        "/profile"
-                    )
-
-
-                else:
-
-                    send_message(
-                        chat_id,
-                        "👋 دوباره خوش آمدی به Bangame!\n\n"
-                        "🎮 حساب تو آماده است\n\n"
-                        "/profile"
-                    )
+                send_keypad(
+                    chat_id,
+                    "🎮 به Bangame خوش آمدی!\n\n"
+                    "از منوی زیر انتخاب کن 👇"
+                )
 
 
 
-            elif text == "/profile":
+            elif text == "/profile" or text == "👤 پروفایل":
 
 
                 user = get_user(chat_id)
@@ -105,6 +90,43 @@ async def receive_update(request: Request):
                         f"⭐ Level: {level}\n"
                         f"✨ XP: {xp}"
                     )
+
+
+
+            elif text == "🎮 بازی‌ها":
+
+
+                send_message(
+                    chat_id,
+                    "🎮 بازی‌ها\n\n"
+                    "به زودی اضافه می‌شوند 🚀"
+                )
+
+
+
+            elif text == "🪙 کیف پول":
+
+
+                user = get_user(chat_id)
+
+
+                _, coins, _, _ = user
+
+
+                send_message(
+                    chat_id,
+                    f"🪙 موجودی شما: {coins}"
+                )
+
+
+
+            elif text == "🎁 جایزه روزانه":
+
+
+                send_message(
+                    chat_id,
+                    "🎁 جایزه روزانه به زودی فعال می‌شود"
+                )
 
 
 
