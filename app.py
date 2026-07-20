@@ -38,7 +38,9 @@ async def receive_update(request: Request):
             )
 
             print("Message:", text)
-            print("Chat ID:", chat_id)
+            print("CHAT ID:", chat_id)
+            print("CHAT ID TYPE:", type(chat_id))
+            print("CHAT ID LENGTH:", len(chat_id) if chat_id else 0)
 
 
             if text == "/start":
