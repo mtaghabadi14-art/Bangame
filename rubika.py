@@ -13,6 +13,7 @@ def call_api(method, data=None):
         data = {}
 
     try:
+
         response = requests.post(
             BASE_URL + method,
             json=data,
@@ -28,6 +29,7 @@ def call_api(method, data=None):
         return result
 
     except Exception as e:
+
         print("Rubika Error:", e)
 
         return {
@@ -36,11 +38,13 @@ def call_api(method, data=None):
         }
 
 
+
 def get_me():
 
     return call_api(
         "getMe"
     )
+
 
 
 def get_updates(offset_id=None, limit=10):
@@ -52,10 +56,12 @@ def get_updates(offset_id=None, limit=10):
     if offset_id:
         data["offset_id"] = offset_id
 
+
     return call_api(
         "getUpdates",
         data
     )
+
 
 
 def send_message(chat_id, text):
@@ -64,10 +70,10 @@ def send_message(chat_id, text):
         "sendMessage",
         {
             "chat_id": chat_id,
-            "text": text,
-            "chat_keypad_type": "None"
+            "text": text
         }
     )
+
 
 
 def update_bot_endpoint(url):
