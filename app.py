@@ -9,10 +9,8 @@ app = FastAPI()
 create_tables()
 
 
-
 @app.get("/")
 def home():
-
     return {
         "status": "Bangame Bot is running 🚀"
     }
@@ -35,14 +33,12 @@ async def receive_update(request: Request):
 
         if update.get("type") == "NewMessage":
 
-
             chat_id = update.get("chat_id")
 
             new_message = update.get(
                 "new_message",
                 {}
             )
-
 
             text = new_message.get(
                 "text",
@@ -53,55 +49,57 @@ async def receive_update(request: Request):
             print("Message:", text)
 
 
+
+            # ثبت کاربر
+            if get_user(chat_id) is None:
+                add_user(chat_id)
+
+
+
+            # شروع
             if text == "/start":
 
+                send_message(
+                    chat_id,
+                    "🎮 خوش آمدی به Bangame!\n\n"
+                    "🪙 1000 سکه اولیه گرفتی\n"
+                    "⭐ Level: 1\n\n"
+                    "برای دیدن پروفایل بزن:\n"
+                    "/profile"
+                )
+
+
+
+            # پروفایل
+            elif text == "/profile":
 
                 user = get_user(chat_id)
 
 
-                if user is None:
+                if user:
 
-                    add_user(chat_id)
+                    user_id, coins, level, xp = user
 
-                    message = (
-                        "🎮 خوش آمدی به Bangame!\n\n"
-                        "✅ حساب تو ساخته شد\n"
-                        "🪙 1000 سکه هدیه گرفتی\n"
-                        "⭐ Level: 1\n\n"
-                        "به زودی بازی‌ها فعال می‌شوند 🚀"
+
+                    send_message(
+                        chat_id,
+                        "👤 پروفایل Bangame\n\n"
+                        f"🪙 سکه: {coins}\n"
+                        f"⭐ Level: {level}\n"
+                        f"✨ XP: {xp}\n\n"
+                        "🎮 بازی‌ها به زودی فعال می‌شوند"
                     )
-
-
-                else:
-
-                    message = (
-                        "👋 دوباره خوش آمدی به Bangame!\n\n"
-                        "حساب تو آماده است 🎮"
-                    )
-
-
-
-                result = send_message(
-                    chat_id,
-                    message
-                )
-
-
-                print("SEND RESULT:")
-                print(result)
-
 
 
             else:
 
-
-                result = send_message(
+                send_message(
                     chat_id,
-                    "دستور نامعتبر است ❌"
+                    "❌ دستور پیدا نشد\n\n"
+                    "دستورات:\n"
+                    "/start\n"
+                    "/profile"
                 )
-
-
-                print(result)
 
 
 
