@@ -24,8 +24,10 @@ async def receive_update(request: Request):
 
     data = await request.json()
 
+
     print("NEW UPDATE:")
     print(data)
+
 
 
     try:
@@ -35,22 +37,21 @@ async def receive_update(request: Request):
 
         if update.get("type") == "NewMessage":
 
+
             chat_id = update.get("chat_id")
 
 
-            new_message = update.get(
+            text = update.get(
                 "new_message",
                 {}
-            )
-
-
-            text = new_message.get(
+            ).get(
                 "text",
                 ""
             )
 
 
             print("Message:", text)
+
 
 
             if text == "/start":
@@ -64,31 +65,25 @@ async def receive_update(request: Request):
                     add_user(chat_id)
 
 
-                    result = send_message(
+                    send_message(
                         chat_id,
                         "🎮 خوش آمدی به Bangame!\n\n"
                         "✅ حساب تو ساخته شد\n"
                         "🪙 1000 سکه هدیه گرفتی\n"
                         "⭐ Level: 1\n"
                         "✨ XP: 0\n\n"
-                        "برای دیدن پروفایل بزن:\n"
                         "/profile"
                     )
 
 
                 else:
 
-                    result = send_message(
+                    send_message(
                         chat_id,
                         "👋 دوباره خوش آمدی به Bangame!\n\n"
                         "🎮 حساب تو آماده است\n\n"
-                        "برای دیدن پروفایل بزن:\n"
                         "/profile"
                     )
-
-
-                print("SEND RESULT:")
-                print(result)
 
 
 
@@ -100,44 +95,32 @@ async def receive_update(request: Request):
 
                 if user:
 
-                    user_id, coins, level, xp = user
+                    _, coins, level, xp = user
 
 
-                    result = send_message(
+                    send_message(
                         chat_id,
                         "👤 پروفایل Bangame\n\n"
                         f"🪙 سکه: {coins}\n"
                         f"⭐ Level: {level}\n"
-                        f"✨ XP: {xp}\n"
+                        f"✨ XP: {xp}"
                     )
-
-
-                    print("SEND RESULT:")
-                    print(result)
 
 
 
             else:
 
 
-                result = send_message(
+                send_message(
                     chat_id,
-                    "❌ دستور پیدا نشد\n\n"
-                    "دستورات:\n"
-                    "/start\n"
-                    "/profile"
+                    "❌ دستور پیدا نشد"
                 )
-
-
-                print("SEND RESULT:")
-                print(result)
 
 
 
     except Exception as e:
 
-        print("ERROR:")
-        print(e)
+        print("ERROR:", e)
 
 
 

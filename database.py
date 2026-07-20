@@ -8,7 +8,6 @@ def connect():
     return sqlite3.connect(DB_NAME)
 
 
-
 def create_tables():
 
     conn = connect()

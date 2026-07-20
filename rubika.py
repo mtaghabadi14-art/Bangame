@@ -3,15 +3,17 @@ import requests
 
 
 TOKEN = os.getenv("RUBIKA_TOKEN")
-print("TOKEN:", TOKEN[:10] if TOKEN else "NO TOKEN")
+
 
 BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
+
 
 
 def call_api(method, data=None):
 
     if data is None:
         data = {}
+
 
     try:
 
@@ -21,13 +23,16 @@ def call_api(method, data=None):
             timeout=30
         )
 
+
         result = response.json()
 
+
         print("API:", method)
-        print("DATA:", data)
         print("RESULT:", result)
 
+
         return result
+
 
     except Exception as e:
 
@@ -40,31 +45,6 @@ def call_api(method, data=None):
 
 
 
-def get_me():
-
-    return call_api(
-        "getMe"
-    )
-
-
-
-def get_updates(offset_id=None, limit=10):
-
-    data = {
-        "limit": limit
-    }
-
-    if offset_id:
-        data["offset_id"] = offset_id
-
-
-    return call_api(
-        "getUpdates",
-        data
-    )
-
-
-
 def send_message(chat_id, text):
 
     return call_api(
@@ -73,6 +53,14 @@ def send_message(chat_id, text):
             "chat_id": chat_id,
             "text": text
         }
+    )
+
+
+
+def get_me():
+
+    return call_api(
+        "getMe"
     )
 
 
