@@ -3,6 +3,7 @@ import requests
 
 
 TOKEN = os.getenv("RUBIKA_TOKEN")
+print("TOKEN:", TOKEN[:10] if TOKEN else "NO TOKEN")
 
 BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
 
