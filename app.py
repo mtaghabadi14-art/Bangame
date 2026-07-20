@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from rubika import send_message, send_keypad
 from database import create_tables, add_user, get_user
+import random
 
 
 app = FastAPI()
@@ -55,12 +56,14 @@ async def receive_update(request: Request):
 
 
 
+            # ساخت کاربر
             if get_user(chat_id) is None:
 
                 add_user(chat_id)
 
 
 
+            # شروع
             if text == "/start":
 
 
@@ -72,6 +75,7 @@ async def receive_update(request: Request):
 
 
 
+            # پروفایل
             elif text == "/profile" or text == "👤 پروفایل":
 
 
@@ -93,32 +97,106 @@ async def receive_update(request: Request):
 
 
 
+            # بازی‌ها
             elif text == "🎮 بازی‌ها":
 
 
                 send_message(
                     chat_id,
-                    "🎮 بازی‌ها\n\n"
-                    "به زودی اضافه می‌شوند 🚀"
+                    "🎮 بازی‌ها:\n\n"
+                    "✂️ سنگ کاغذ قیچی\n\n"
+                    "برای شروع بزن:\n"
+                    "/rps"
                 )
 
 
 
+            # شروع سنگ کاغذ قیچی
+            elif text == "/rps":
+
+
+                send_message(
+                    chat_id,
+                    "✂️ سنگ کاغذ قیچی\n\n"
+                    "انتخاب کن:\n\n"
+                    "🪨 سنگ\n"
+                    "📄 کاغذ\n"
+                    "✂️ قیچی"
+                )
+
+
+
+            # انتخاب بازیکن
+            elif text in [
+                "🪨 سنگ",
+                "📄 کاغذ",
+                "✂️ قیچی"
+            ]:
+
+
+                choices = [
+                    "🪨 سنگ",
+                    "📄 کاغذ",
+                    "✂️ قیچی"
+                ]
+
+
+                bot_choice = random.choice(
+                    choices
+                )
+
+
+                if text == bot_choice:
+
+                    result = "🤝 مساوی شد!"
+
+
+                elif (
+                    (text == "🪨 سنگ" and bot_choice == "✂️ قیچی")
+                    or
+                    (text == "📄 کاغذ" and bot_choice == "🪨 سنگ")
+                    or
+                    (text == "✂️ قیچی" and bot_choice == "📄 کاغذ")
+                ):
+
+                    result = "🎉 بردی!\n🪙 +100 سکه"
+
+
+                else:
+
+                    result = "😢 باختی!"
+
+
+
+                send_message(
+                    chat_id,
+                    f"انتخاب تو: {text}\n"
+                    f"انتخاب من: {bot_choice}\n\n"
+                    f"{result}"
+                )
+
+
+
+            # کیف پول
             elif text == "🪙 کیف پول":
 
 
                 user = get_user(chat_id)
 
-                _, coins, _, _ = user
+
+                if user:
+
+                    _, coins, _, _ = user
 
 
-                send_message(
-                    chat_id,
-                    f"🪙 موجودی شما: {coins}"
-                )
+                    send_message(
+                        chat_id,
+                        f"🪙 موجودی شما: {coins}"
+                    )
 
 
 
+            # جایزه
             elif text == "🎁 جایزه روزانه":
 
 
@@ -141,7 +219,8 @@ async def receive_update(request: Request):
 
     except Exception as e:
 
-        print("ERROR:", e)
+        print("ERROR:")
+        print(e)
 
 
 
