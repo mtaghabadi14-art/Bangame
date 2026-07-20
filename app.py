@@ -1,43 +1,73 @@
 from fastapi import FastAPI, Request
 from rubika import send_message
 
+
 app = FastAPI()
+
 
 
 @app.get("/")
 def home():
+
     return {
         "status": "Bangame Bot is running 🚀"
     }
 
 
-@app.post("/webhook")
-async def webhook(request: Request):
+
+@app.post("/receiveUpdate")
+async def receive_update(request: Request):
 
     data = await request.json()
 
+    print("NEW UPDATE:")
     print(data)
+
 
     try:
 
-        if data["type"] == "NewMessage":
+        update = data.get("update", {})
 
-            chat_id = data["chat_id"]
 
-            text = data["new_message"].get("text", "")
+        if update.get("type") == "NewMessage":
+
+
+            new_message = update.get(
+                "new_message",
+                {}
+            )
+
+
+            chat_id = update.get(
+                "chat_id"
+            )
+
+
+            text = new_message.get(
+                "text",
+                ""
+            )
+
+
+            print(
+                "Message:",
+                text
+            )
 
 
             if text == "/start":
+
 
                 send_message(
                     chat_id,
                     "🎮 سلام!\n\n"
                     "به Bangame خوش آمدی 🚀\n\n"
-                    "بازی‌ها به زودی آماده می‌شوند 😎"
+                    "ربات آماده است 😎"
                 )
 
 
             else:
+
 
                 send_message(
                     chat_id,
@@ -45,8 +75,15 @@ async def webhook(request: Request):
                 )
 
 
+
     except Exception as e:
-        print("ERROR:", e)
+
+        print(
+            "ERROR:",
+            e
+        )
 
 
-    return {"ok": True}
+    return {
+        "ok": True
+    }

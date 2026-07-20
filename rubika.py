@@ -1,87 +1,81 @@
-import requests
 import os
+import requests
 
 
-TOKEN = "BJEHHC0DFLTFEXNDDLULGDUYRUDJOHJYWSLXZVTFBJVISBMORNJPVBHCTEDHBXGC"
+TOKEN = os.getenv("RUBIKA_TOKEN")
 
-if not TOKEN:
-    print("⚠️ RUBIKA_TOKEN پیدا نشد!")
-
-
-API_URL = f"https://botapi.rubika.ir/v3/{TOKEN}"
+BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
 
 
-def send_message(chat_id, text):
-    """
-    ارسال پیام به کاربر
-    """
+def call_api(method, data=None):
 
-    url = API_URL + "/sendMessage"
-
-    data = {
-        "chat_id": chat_id,
-        "text": text
-    }
+    if data is None:
+        data = {}
 
     try:
+
         response = requests.post(
-            url,
+            BASE_URL + method,
             json=data,
-            timeout=10
+            timeout=30
         )
 
         return response.json()
 
     except Exception as e:
-        print("Send Message Error:", e)
-        return None
+
+        print("Rubika Error:", e)
+
+        return {
+            "status": "ERROR",
+            "error": str(e)
+        }
 
 
 
 def get_me():
-    """
-    تست اتصال ربات
-    """
 
-    url = API_URL + "/getMe"
-
-    try:
-        response = requests.post(
-            url,
-            timeout=10
-        )
-
-        return response.json()
-
-    except Exception as e:
-        print("GetMe Error:", e)
-        return None
+    return call_api(
+        "getMe"
+    )
 
 
 
-def get_updates(offset=None):
-    """
-    دریافت پیام‌های جدید
-    """
-
-    url = API_URL + "/getUpdates"
+def get_updates(offset_id=None, limit=10):
 
     data = {
-        "limit": 10
+        "limit": limit
     }
 
-    if offset:
-        data["offset_id"] = offset
+    if offset_id:
+        data["offset_id"] = offset_id
 
-    try:
-        response = requests.post(
-            url,
-            json=data,
-            timeout=10
-        )
 
-        return response.json()
+    return call_api(
+        "getUpdates",
+        data
+    )
 
-    except Exception as e:
-        print("Get Updates Error:", e)
-        return None
+
+
+def send_message(chat_id, text):
+
+    return call_api(
+        "sendMessage",
+        {
+            "chat_id": chat_id,
+            "text": text
+        }
+    )
+
+
+
+def update_bot_endpoint(url):
+
+    return call_api(
+        "updateBotEndpoints",
+        {
+            "url": url,
+            "type": "ReceiveUpdate"
+        }
+    )
