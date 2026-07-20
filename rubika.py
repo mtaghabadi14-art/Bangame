@@ -7,6 +7,7 @@ TOKEN = os.getenv("RUBIKA_TOKEN")
 BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
 
 
+
 def call_api(method, data=None):
 
     if data is None:
@@ -20,7 +21,13 @@ def call_api(method, data=None):
             timeout=30
         )
 
-        return response.json()
+        result = response.json()
+
+        print("API:", method)
+        print("RESULT:", result)
+
+        return result
+
 
     except Exception as e:
 
@@ -64,7 +71,8 @@ def send_message(chat_id, text):
         "sendMessage",
         {
             "chat_id": chat_id,
-            "text": text
+            "text": text,
+            "reply_to_message_id": None
         }
     )
 
