@@ -39,15 +39,16 @@ async def receive_update(request: Request):
 
             print("Message:", text)
             print("CHAT ID:", chat_id)
-            print("CHAT ID TYPE:", type(chat_id))
-            print("CHAT ID LENGTH:", len(chat_id) if chat_id else 0)
 
 
             if text == "/start":
 
                 result = send_message(
                     chat_id,
-                    "hello"
+                    "🎮 به Bangame خوش آمدی!\n\n"
+                    "🔥 دنیای بازی‌ها، رقابت و جایزه‌ها\n\n"
+                    "🚀 ربات در حال ساخته شدن است...\n\n"
+                    "به زودی کلی بازی و امکانات جذاب اضافه می‌شود 😎"
                 )
 
                 print("SEND RESULT:")
@@ -58,7 +59,7 @@ async def receive_update(request: Request):
 
                 result = send_message(
                     chat_id,
-                    "Message received"
+                    "پیامت دریافت شد ✅"
                 )
 
                 print("SEND RESULT:")
