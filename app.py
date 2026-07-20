@@ -47,9 +47,7 @@ async def receive_update(request: Request):
 
                 result = send_message(
                     chat_id,
-                    "🎮 سلام!\n\n"
-                    "به Bangame خوش آمدی 🚀\n\n"
-                    "ربات آماده است 😎"
+                    "hello"
                 )
 
                 print("SEND RESULT:")
@@ -60,7 +58,7 @@ async def receive_update(request: Request):
 
                 result = send_message(
                     chat_id,
-                    "پیامت دریافت شد ✅"
+                    "Message received"
                 )
 
                 print("SEND RESULT:")
