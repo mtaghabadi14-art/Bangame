@@ -7,6 +7,7 @@ TOKEN = os.getenv("RUBIKA_TOKEN")
 BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
 
 
+
 def call_api(method, data=None):
 
     if data is None:
@@ -59,6 +60,7 @@ def send_keypad(chat_id, text):
         {
             "chat_id": chat_id,
             "text": text,
+            "chat_keypad_type": "New",
             "chat_keypad": {
                 "rows": [
                     {
@@ -99,7 +101,9 @@ def send_keypad(chat_id, text):
 
 def get_me():
 
-    return call_api("getMe")
+    return call_api(
+        "getMe"
+    )
 
 
 

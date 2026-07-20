@@ -55,8 +55,8 @@ async def receive_update(request: Request):
 
 
 
-            # ساخت کاربر
             if get_user(chat_id) is None:
+
                 add_user(chat_id)
 
 
@@ -108,7 +108,6 @@ async def receive_update(request: Request):
 
 
                 user = get_user(chat_id)
-
 
                 _, coins, _, _ = user
 
