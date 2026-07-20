@@ -53,7 +53,30 @@ def send_message(chat_id, text):
 
 
 
-def send_keypad(chat_id, text):
+def send_keypad(chat_id, text, buttons):
+
+    rows = []
+
+    for row in buttons:
+
+        button_list = []
+
+        for button in row:
+
+            button_list.append(
+                {
+                    "id": button,
+                    "type": "Simple",
+                    "button_text": button
+                }
+            )
+
+        rows.append(
+            {
+                "buttons": button_list
+            }
+        )
+
 
     return call_api(
         "sendMessage",
@@ -62,38 +85,22 @@ def send_keypad(chat_id, text):
             "text": text,
             "chat_keypad_type": "New",
             "chat_keypad": {
-                "rows": [
-                    {
-                        "buttons": [
-                            {
-                                "id": "profile",
-                                "type": "Simple",
-                                "button_text": "👤 پروفایل"
-                            },
-                            {
-                                "id": "games",
-                                "type": "Simple",
-                                "button_text": "🎮 بازی‌ها"
-                            }
-                        ]
-                    },
-                    {
-                        "buttons": [
-                            {
-                                "id": "wallet",
-                                "type": "Simple",
-                                "button_text": "🪙 کیف پول"
-                            },
-                            {
-                                "id": "daily",
-                                "type": "Simple",
-                                "button_text": "🎁 جایزه روزانه"
-                            }
-                        ]
-                    }
-                ],
+                "rows": rows,
                 "resize_keyboard": True
             }
+        }
+    )
+
+
+
+def remove_keypad(chat_id, text):
+
+    return call_api(
+        "sendMessage",
+        {
+            "chat_id": chat_id,
+            "text": text,
+            "chat_keypad_type": "Remove"
         }
     )
 

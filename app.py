@@ -1,13 +1,16 @@
 from fastapi import FastAPI, Request
-from rubika import send_message, send_keypad
-from database import create_tables, add_user, get_user
+from rubika import send_message, send_keypad, remove_keypad
+from database import create_tables, add_user, get_user, add_coins
 import random
 
 
 app = FastAPI()
 
-
 create_tables()
+
+
+# وضعیت بازی کاربران
+games = {}
 
 
 
@@ -58,9 +61,7 @@ async def receive_update(request: Request):
 
 
 
-        # فقط یک بار گرفتن کاربر
         user = get_user(chat_id)
-
 
 
         if user is None:
@@ -71,20 +72,30 @@ async def receive_update(request: Request):
 
 
 
-        # START
+        # شروع
         if text == "/start":
 
 
             send_keypad(
                 chat_id,
                 "🎮 به Bangame خوش آمدی!\n\n"
-                "از منوی زیر انتخاب کن 👇"
+                "یک گزینه انتخاب کن 👇",
+                [
+                    [
+                        "🎮 بازی‌ها",
+                        "👤 پروفایل"
+                    ],
+                    [
+                        "🪙 کیف پول",
+                        "🎁 جایزه روزانه"
+                    ]
+                ]
             )
 
 
 
-        # PROFILE
-        elif text == "/profile" or text == "👤 پروفایل":
+        # پروفایل
+        elif text == "👤 پروفایل":
 
 
             _, coins, level, xp = user
@@ -100,69 +111,86 @@ async def receive_update(request: Request):
 
 
 
-        # GAMES
+        # بازی ها
         elif text == "🎮 بازی‌ها":
 
 
-            send_message(
+            send_keypad(
                 chat_id,
-                "🎮 بازی‌ها:\n\n"
-                "✂️ سنگ کاغذ قیچی\n\n"
-                "برای شروع بزن:\n"
-                "/rps"
+                "🎮 بازی‌ها را انتخاب کن:",
+                [
+                    [
+                        "✂️ سنگ کاغذ قیچی",
+                        "🔢 حدس عدد"
+                    ],
+                    [
+                        "🚪 خروج"
+                    ]
+                ]
             )
 
 
 
-        # RPS START
-        elif text == "/rps":
+        # شروع RPS
+        elif text == "✂️ سنگ کاغذ قیچی":
 
 
-            send_message(
+            games[chat_id] = "rps"
+
+
+            send_keypad(
                 chat_id,
                 "✂️ سنگ کاغذ قیچی\n\n"
-                "انتخاب کن:\n\n"
-                "🪨 سنگ\n"
-                "📄 کاغذ\n"
-                "✂️ قیچی"
+                "انتخاب کن:",
+                [
+                    [
+                        "🪨 سنگ",
+                        "📄 کاغذ"
+                    ],
+                    [
+                        "✂️ قیچی",
+                        "🚪 خروج"
+                    ]
+                ]
             )
 
 
 
-        # RPS GAME
-        elif text in [
+        # بازی RPS
+        elif games.get(chat_id) == "rps" and text in [
             "🪨 سنگ",
             "📄 کاغذ",
             "✂️ قیچی"
         ]:
 
 
-            choices = [
-                "🪨 سنگ",
-                "📄 کاغذ",
-                "✂️ قیچی"
-            ]
-
-
-            bot_choice = random.choice(
-                choices
+            bot = random.choice(
+                [
+                    "🪨 سنگ",
+                    "📄 کاغذ",
+                    "✂️ قیچی"
+                ]
             )
 
 
-            if text == bot_choice:
+            if text == bot:
 
                 result = "🤝 مساوی شد!"
 
 
+
             elif (
-                (text == "🪨 سنگ" and bot_choice == "✂️ قیچی")
+                (text == "🪨 سنگ" and bot == "✂️ قیچی")
                 or
-                (text == "📄 کاغذ" and bot_choice == "🪨 سنگ")
+                (text == "📄 کاغذ" and bot == "🪨 سنگ")
                 or
-                (text == "✂️ قیچی" and bot_choice == "📄 کاغذ")
+                (text == "✂️ قیچی" and bot == "📄 کاغذ")
             ):
 
-                result = "🎉 بردی!\n🪙 جایزه بعداً اضافه می‌شود"
+                add_coins(chat_id, 100)
+
+                result = "🎉 بردی!\n🪙 +100 سکه"
+
 
 
             else:
@@ -174,17 +202,93 @@ async def receive_update(request: Request):
             send_message(
                 chat_id,
                 f"انتخاب تو: {text}\n"
-                f"انتخاب من: {bot_choice}\n\n"
+                f"انتخاب من: {bot}\n\n"
                 f"{result}"
             )
 
 
 
-        # WALLET
+        # شروع حدس عدد
+        elif text == "🔢 حدس عدد":
+
+
+            games[chat_id] = {
+                "game": "guess",
+                "number": random.randint(1,10)
+            }
+
+
+            send_keypad(
+                chat_id,
+                "🔢 یک عدد بین 1 تا 10 حدس بزن:",
+                [
+                    [
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "4",
+                        "5",
+                        "6"
+                    ],
+                    [
+                        "7",
+                        "8",
+                        "9"
+                    ],
+                    [
+                        "10",
+                        "🚪 خروج"
+                    ]
+                ]
+            )
+
+
+
+        # حدس عدد
+        elif isinstance(games.get(chat_id), dict) and games[chat_id].get("game") == "guess":
+
+
+            if text.isdigit():
+
+
+                guess = int(text)
+
+                answer = games[chat_id]["number"]
+
+
+
+                if guess == answer:
+
+                    add_coins(chat_id, 200)
+
+                    send_message(
+                        chat_id,
+                        "🎉 درست حدس زدی!\n"
+                        "🪙 +200 سکه"
+                    )
+
+
+                    games.pop(chat_id)
+
+
+
+                else:
+
+                    send_message(
+                        chat_id,
+                        "❌ اشتباه بود!\n"
+                        "دوباره تلاش کن"
+                    )
+
+
+
+        # کیف پول
         elif text == "🪙 کیف پول":
 
 
-            _, coins, level, xp = user
+            _, coins, _, _ = user
 
 
             send_message(
@@ -194,19 +298,49 @@ async def receive_update(request: Request):
 
 
 
-        # DAILY
+        # جایزه
         elif text == "🎁 جایزه روزانه":
+
+
+            add_coins(chat_id, 50)
 
 
             send_message(
                 chat_id,
-                "🎁 جایزه روزانه به زودی فعال می‌شود"
+                "🎁 جایزه گرفتی!\n"
+                "🪙 +50 سکه"
+            )
+
+
+
+        # خروج
+        elif text == "🚪 خروج":
+
+
+            games.pop(
+                chat_id,
+                None
+            )
+
+
+            send_keypad(
+                chat_id,
+                "🏠 برگشتی به منوی اصلی",
+                [
+                    [
+                        "🎮 بازی‌ها",
+                        "👤 پروفایل"
+                    ],
+                    [
+                        "🪙 کیف پول",
+                        "🎁 جایزه روزانه"
+                    ]
+                ]
             )
 
 
 
         else:
-
 
             send_message(
                 chat_id,
@@ -217,8 +351,7 @@ async def receive_update(request: Request):
 
     except Exception as e:
 
-        print("ERROR:")
-        print(e)
+        print("ERROR:", e)
 
 
 
