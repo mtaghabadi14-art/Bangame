@@ -34,186 +34,184 @@ async def receive_update(request: Request):
         update = data.get("update", {})
 
 
-        if update.get("type") == "NewMessage":
+        if update.get("type") != "NewMessage":
+            return {"ok": True}
 
 
-            chat_id = update.get("chat_id")
+
+        chat_id = update.get("chat_id")
 
 
-            message = update.get(
-                "new_message",
-                {}
+        message = update.get(
+            "new_message",
+            {}
+        )
+
+
+        text = message.get(
+            "text",
+            ""
+        )
+
+
+        print("Message:", text)
+
+
+
+        # فقط یک بار گرفتن کاربر
+        user = get_user(chat_id)
+
+
+
+        if user is None:
+
+            add_user(chat_id)
+
+            user = get_user(chat_id)
+
+
+
+        # START
+        if text == "/start":
+
+
+            send_keypad(
+                chat_id,
+                "🎮 به Bangame خوش آمدی!\n\n"
+                "از منوی زیر انتخاب کن 👇"
             )
 
 
-            text = message.get(
-                "text",
-                ""
+
+        # PROFILE
+        elif text == "/profile" or text == "👤 پروفایل":
+
+
+            _, coins, level, xp = user
+
+
+            send_message(
+                chat_id,
+                "👤 پروفایل Bangame\n\n"
+                f"🪙 سکه: {coins}\n"
+                f"⭐ Level: {level}\n"
+                f"✨ XP: {xp}"
             )
 
 
-            print("Message:", text)
+
+        # GAMES
+        elif text == "🎮 بازی‌ها":
+
+
+            send_message(
+                chat_id,
+                "🎮 بازی‌ها:\n\n"
+                "✂️ سنگ کاغذ قیچی\n\n"
+                "برای شروع بزن:\n"
+                "/rps"
+            )
 
 
 
-            # ساخت کاربر
-            if get_user(chat_id) is None:
-
-                add_user(chat_id)
+        # RPS START
+        elif text == "/rps":
 
 
-
-            # شروع
-            if text == "/start":
-
-
-                send_keypad(
-                    chat_id,
-                    "🎮 به Bangame خوش آمدی!\n\n"
-                    "از منوی زیر انتخاب کن 👇"
-                )
+            send_message(
+                chat_id,
+                "✂️ سنگ کاغذ قیچی\n\n"
+                "انتخاب کن:\n\n"
+                "🪨 سنگ\n"
+                "📄 کاغذ\n"
+                "✂️ قیچی"
+            )
 
 
 
-            # پروفایل
-            elif text == "/profile" or text == "👤 پروفایل":
+        # RPS GAME
+        elif text in [
+            "🪨 سنگ",
+            "📄 کاغذ",
+            "✂️ قیچی"
+        ]:
 
 
-                user = get_user(chat_id)
-
-
-                if user:
-
-                    _, coins, level, xp = user
-
-
-                    send_message(
-                        chat_id,
-                        "👤 پروفایل Bangame\n\n"
-                        f"🪙 سکه: {coins}\n"
-                        f"⭐ Level: {level}\n"
-                        f"✨ XP: {xp}"
-                    )
-
-
-
-            # بازی‌ها
-            elif text == "🎮 بازی‌ها":
-
-
-                send_message(
-                    chat_id,
-                    "🎮 بازی‌ها:\n\n"
-                    "✂️ سنگ کاغذ قیچی\n\n"
-                    "برای شروع بزن:\n"
-                    "/rps"
-                )
-
-
-
-            # شروع سنگ کاغذ قیچی
-            elif text == "/rps":
-
-
-                send_message(
-                    chat_id,
-                    "✂️ سنگ کاغذ قیچی\n\n"
-                    "انتخاب کن:\n\n"
-                    "🪨 سنگ\n"
-                    "📄 کاغذ\n"
-                    "✂️ قیچی"
-                )
-
-
-
-            # انتخاب بازیکن
-            elif text in [
+            choices = [
                 "🪨 سنگ",
                 "📄 کاغذ",
                 "✂️ قیچی"
-            ]:
+            ]
 
 
-                choices = [
-                    "🪨 سنگ",
-                    "📄 کاغذ",
-                    "✂️ قیچی"
-                ]
+            bot_choice = random.choice(
+                choices
+            )
 
 
-                bot_choice = random.choice(
-                    choices
-                )
+            if text == bot_choice:
+
+                result = "🤝 مساوی شد!"
 
 
-                if text == bot_choice:
+            elif (
+                (text == "🪨 سنگ" and bot_choice == "✂️ قیچی")
+                or
+                (text == "📄 کاغذ" and bot_choice == "🪨 سنگ")
+                or
+                (text == "✂️ قیچی" and bot_choice == "📄 کاغذ")
+            ):
 
-                    result = "🤝 مساوی شد!"
-
-
-                elif (
-                    (text == "🪨 سنگ" and bot_choice == "✂️ قیچی")
-                    or
-                    (text == "📄 کاغذ" and bot_choice == "🪨 سنگ")
-                    or
-                    (text == "✂️ قیچی" and bot_choice == "📄 کاغذ")
-                ):
-
-                    result = "🎉 بردی!\n🪙 +100 سکه"
-
-
-                else:
-
-                    result = "😢 باختی!"
-
-
-
-                send_message(
-                    chat_id,
-                    f"انتخاب تو: {text}\n"
-                    f"انتخاب من: {bot_choice}\n\n"
-                    f"{result}"
-                )
-
-
-
-            # کیف پول
-            elif text == "🪙 کیف پول":
-
-
-                user = get_user(chat_id)
-
-
-                if user:
-
-                    _, coins, _, _ = user
-
-
-                    send_message(
-                        chat_id,
-                        f"🪙 موجودی شما: {coins}"
-                    )
-
-
-
-            # جایزه
-            elif text == "🎁 جایزه روزانه":
-
-
-                send_message(
-                    chat_id,
-                    "🎁 جایزه روزانه به زودی فعال می‌شود"
-                )
-
+                result = "🎉 بردی!\n🪙 جایزه بعداً اضافه می‌شود"
 
 
             else:
 
+                result = "😢 باختی!"
 
-                send_message(
-                    chat_id,
-                    "❌ دستور پیدا نشد"
-                )
+
+
+            send_message(
+                chat_id,
+                f"انتخاب تو: {text}\n"
+                f"انتخاب من: {bot_choice}\n\n"
+                f"{result}"
+            )
+
+
+
+        # WALLET
+        elif text == "🪙 کیف پول":
+
+
+            _, coins, level, xp = user
+
+
+            send_message(
+                chat_id,
+                f"🪙 موجودی شما: {coins}"
+            )
+
+
+
+        # DAILY
+        elif text == "🎁 جایزه روزانه":
+
+
+            send_message(
+                chat_id,
+                "🎁 جایزه روزانه به زودی فعال می‌شود"
+            )
+
+
+
+        else:
+
+
+            send_message(
+                chat_id,
+                "❌ دستور پیدا نشد"
+            )
 
 
 
