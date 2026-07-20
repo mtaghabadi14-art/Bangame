@@ -1,6 +1,6 @@
-from game import rock_paper_scissors, guess_number, dice_game
-from player import Player
-from database_sql import add_player, get_player
+from games.game import rock_paper_scissors, guess_number, dice_game
+from models.player import Player
+from database.database_sql import add_player, get_player
 
 
 name = "TAHA"
