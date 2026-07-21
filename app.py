@@ -1,12 +1,16 @@
 from fastapi import FastAPI, Request
 from rubika import send_message, send_keypad, remove_keypad
+
 from database import (
     create_tables,
     add_user,
     get_user,
     add_coins
 )
+
 from games import rps, guess, dice
+from level import give_xp
+
 import time
 
 app = FastAPI()
@@ -14,7 +18,7 @@ app = FastAPI()
 create_tables()
 
 # -----------------------------
-# حافظه موقت بازی‌ها
+# حافظه موقت
 # -----------------------------
 
 states = {}
@@ -34,7 +38,6 @@ def main_menu(chat_id):
         ]
     )
 
-
 # -----------------------------
 # منوی بازی‌ها
 # -----------------------------
@@ -52,7 +55,6 @@ def games_menu(chat_id):
         ]
     )
 
-
 # -----------------------------
 # صفحه اصلی
 # -----------------------------
@@ -63,7 +65,6 @@ def home():
     return {
         "status": "Bangame Bot Online 🚀"
     }
-
 
 # -----------------------------
 # دریافت پیام
@@ -106,7 +107,8 @@ async def receive_update(request: Request):
             states.pop(chat_id, None)
 
             main_menu(chat_id)
-                    # -----------------------------
+
+        # -----------------------------
         # منوی اصلی
         # -----------------------------
 
@@ -218,17 +220,31 @@ async def receive_update(request: Request):
 
             if result["result"] == "win":
 
-                add_coins(chat_id, 20)
+                add_coins(chat_id, 5)
 
-                message += "🏆 برنده شدی!\n🪙 +20 سکه"
+                level = give_xp(chat_id, 2)
+
+                message += "🏆 برنده شدی!\n🪙 +5 سکه\n⭐ +2 XP"
+
+                if level["level_up"]:
+
+                    message += (
+                        f"\n\n🎉 LEVEL UP!"
+                        f"\n⭐ Level {level['level']}"
+                        f"\n🪙 +{level['reward']} سکه"
+                    )
 
             elif result["result"] == "lose":
 
-                message += "😢 ربات برنده شد."
+                give_xp(chat_id, 1)
+
+                message += "😢 ربات برنده شد.\n⭐ +1 XP"
 
             else:
 
-                message += "🤝 مساوی شد."
+                give_xp(chat_id, 1)
+
+                message += "🤝 مساوی شد.\n⭐ +1 XP"
 
             send_keypad(
                 chat_id,
@@ -248,7 +264,8 @@ async def receive_update(request: Request):
 
             states[chat_id] = {
                 "game": "guess",
-                "number": number
+                "number": number,
+                "tries": 0
             }
 
             remove_keypad(
@@ -269,6 +286,8 @@ async def receive_update(request: Request):
                 )
 
             else:
+
+                states[chat_id]["tries"] += 1
 
                 value = int(text)
 
@@ -293,17 +312,52 @@ async def receive_update(request: Request):
 
                 else:
 
-                    add_coins(chat_id, 100)
+                    tries = states[chat_id]["tries"]
+
+                    if tries == 1:
+                        coins = 100
+                        xp = 20
+                    elif tries == 2:
+                        coins = 80
+                        xp = 18
+                    elif tries == 3:
+                        coins = 60
+                        xp = 15
+                    elif tries <= 5:
+                        coins = 40
+                        xp = 10
+                    elif tries <= 8:
+                        coins = 25
+                        xp = 6
+                    else:
+                        coins = 10
+                        xp = 3
+
+                    add_coins(chat_id, coins)
+
+                    level = give_xp(chat_id, xp)
 
                     states.pop(chat_id)
 
-                    send_message(
-                        chat_id,
-                        "🎉 درست حدس زدی!\n🪙 +100 سکه"
+                    message = (
+                        f"🎉 درست حدس زدی!\n"
+                        f"🪙 +{coins} سکه\n"
+                        f"⭐ +{xp} XP"
                     )
 
+                    if level["level_up"]:
+
+                        message += (
+                            f"\n\n🎉 LEVEL UP!"
+                            f"\n⭐ Level {level['level']}"
+                            f"\n🪙 +{level['reward']} سکه"
+                        )
+
+                    send_message(chat_id, message)
+
                     games_menu(chat_id)
-                            # -----------------------------
+
+        # -----------------------------
         # تاس
         # -----------------------------
 
@@ -338,17 +392,31 @@ async def receive_update(request: Request):
 
             if player > bot:
 
-                add_coins(chat_id, 30)
+                add_coins(chat_id, 10)
 
-                message += "🏆 تو برنده شدی!\n🪙 +30 سکه"
+                level = give_xp(chat_id, 3)
+
+                message += "🏆 برنده شدی!\n🪙 +10 سکه\n⭐ +3 XP"
+
+                if level["level_up"]:
+
+                    message += (
+                        f"\n\n🎉 LEVEL UP!"
+                        f"\n⭐ Level {level['level']}"
+                        f"\n🪙 +{level['reward']} سکه"
+                    )
 
             elif player < bot:
 
-                message += "😢 ربات برنده شد."
+                give_xp(chat_id, 1)
+
+                message += "😢 ربات برنده شد.\n⭐ +1 XP"
 
             else:
 
-                message += "🤝 مساوی شد."
+                give_xp(chat_id, 1)
+
+                message += "🤝 مساوی شد.\n⭐ +1 XP"
 
             send_keypad(
                 chat_id,
@@ -386,6 +454,8 @@ async def receive_update(request: Request):
     return {
         "ok": True
     }
+
+
 # -----------------------------
 # اجرای محلی
 # -----------------------------
@@ -400,7 +470,9 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     )
-    # ==========================================
+
+
+# ==========================================
 # پایان فایل app.py
-# Bangame v1.0
+# Bangame v2.0
 # ==========================================

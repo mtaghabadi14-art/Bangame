@@ -1,8 +1,6 @@
 import sqlite3
 
-
 DB_NAME = "bangame.db"
-
 
 
 def connect():
@@ -10,13 +8,11 @@ def connect():
     return sqlite3.connect(DB_NAME)
 
 
-
 def create_tables():
 
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
@@ -32,11 +28,9 @@ def create_tables():
     )
     """)
 
-
     conn.commit()
 
     conn.close()
-
 
 
 def add_user(user_id):
@@ -44,7 +38,6 @@ def add_user(user_id):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -54,11 +47,9 @@ def add_user(user_id):
         (user_id,)
     )
 
-
     conn.commit()
 
     conn.close()
-
 
 
 def get_user(user_id):
@@ -66,7 +57,6 @@ def get_user(user_id):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -77,15 +67,11 @@ def get_user(user_id):
         (user_id,)
     )
 
-
     user = cur.fetchone()
-
 
     conn.close()
 
-
     return user
-
 
 
 def add_coins(user_id, amount):
@@ -93,7 +79,6 @@ def add_coins(user_id, amount):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -104,6 +89,65 @@ def add_coins(user_id, amount):
         (amount, user_id)
     )
 
+    conn.commit()
+
+    conn.close()
+
+
+def add_xp(user_id, amount):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET xp = xp + ?
+        WHERE user_id=?
+        """,
+        (amount, user_id)
+    )
+
+    conn.commit()
+
+    conn.close()
+
+
+def set_level(user_id, level):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET level = ?
+        WHERE user_id=?
+        """,
+        (level, user_id)
+    )
+
+    conn.commit()
+
+    conn.close()
+
+
+def set_xp(user_id, xp):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET xp = ?
+        WHERE user_id=?
+        """,
+        (xp, user_id)
+    )
 
     conn.commit()
 
