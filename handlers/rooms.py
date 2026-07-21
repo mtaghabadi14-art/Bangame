@@ -163,7 +163,12 @@ def receive_room_code(chat_id, code):
     # شروع بازی دوز
     if room.game == "tictactoe":
 
-        tictactoe.start(room)
+     send_message(
+        room.host,
+        "🔥 دوز شروع شد!"
+    )
+
+    tictactoe.start(room)
 
 
     return True
