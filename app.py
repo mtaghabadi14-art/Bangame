@@ -207,7 +207,7 @@ async def receive_update(request: Request):
             and text in ["🪨 سنگ", "📄 کاغذ", "✂️ قیچی"]
         ):
 
-            player = text.replace("🪨 ", "").replace("📄 ", "").replace("✂️ ", "")
+            player = text
 
             result = rps.play(player)
 
