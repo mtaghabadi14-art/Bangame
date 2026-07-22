@@ -2,7 +2,8 @@ from fastapi import FastAPI, Request
 import time
 
 from rubika import (
-    send_message
+    send_message,
+    remove_keypad
 )
 
 from database import (
@@ -13,7 +14,9 @@ from database import (
 
 from handlers.menu import (
     main_menu,
-    games_menu
+    games_menu,
+    room_menu,
+    create_room_menu
 )
 
 from handlers.profile import (
@@ -43,6 +46,7 @@ from handlers.rooms import (
 )
 
 from handlers import tictactoe as ttt_handler
+
 from handlers import rps as rps_handler
 
 from rooms.manager import (
@@ -59,9 +63,8 @@ app = FastAPI()
 create_tables()
 
 
-# وضعیت بازی‌های ساده
+# وضعیت بازی‌های تک نفره
 states = {}
-
 
 
 # ==========================================
@@ -76,7 +79,6 @@ def home():
     }
 
 
-
 # ==========================================
 # Webhook
 # ==========================================
@@ -87,7 +89,6 @@ async def receive_update(request: Request):
     start_time = time.time()
 
     data = await request.json()
-
 
     print("\n========== UPDATE ==========")
     print(data)
@@ -117,14 +118,18 @@ async def receive_update(request: Request):
         ).strip()
 
 
+        button_id = (
+            msg.get("aux_data", {})
+            .get("button_id")
+        )
+
 
         if not get_user(chat_id):
 
             add_user(chat_id)
-                    # ==========================================
-        # ورود به اتاق با کد
-        # ==========================================
 
+
+        # ورود به اتاق
         if receive_room_code(chat_id, text):
 
             return {
@@ -132,7 +137,8 @@ async def receive_update(request: Request):
             }
 
 
-
+        # ادامه در بخش بعد...
+        
         # ==========================================
         # بازی‌های آنلاین
         # ==========================================
@@ -142,21 +148,19 @@ async def receive_update(request: Request):
 
         if room:
 
-            button_id = (
-                msg.get("aux_data", {})
-                .get("button_id")
-            )
 
+            # -------------------------
+            # دوز
+            # -------------------------
 
-            # ---------- دوز ----------
-            if room.game == "tictactoe" and button_id:
+            if room.game == "tictactoe":
 
 
                 ttt_handler.handle(
                     room,
                     chat_id,
                     {
-                        "button_id": button_id
+                        "button_id": button_id or text
                     }
                 )
 
@@ -167,23 +171,40 @@ async def receive_update(request: Request):
 
 
 
-            # ---------- سنگ کاغذ قیچی ----------
-            elif room.game == "rps" and button_id:
+            # -------------------------
+            # سنگ کاغذ قیچی
+            # -------------------------
+
+            if room.game == "rps":
 
 
-                rps_handler.handle(
-                    room,
-                    chat_id,
-                    {
-                        "button_id": button_id
+                if text in [
+                    "🪨 سنگ",
+                    "📄 کاغذ",
+                    "✂️ قیچی"
+                ]:
+
+
+                    rps_handler.choose(
+                        chat_id,
+                        text
+                    )
+
+
+                    return {
+                        "ok": True
                     }
-                )
 
 
-                return {
-                    "ok": True
-                }
+                if text == "🚪 خروج از بازی":
 
+
+                    exit_room(chat_id)
+
+
+                    return {
+                        "ok": True
+                    }
 
 
 
@@ -193,10 +214,14 @@ async def receive_update(request: Request):
 
         if text == "/start":
 
-            states.pop(chat_id, None)
+
+            states.pop(
+                chat_id,
+                None
+            )
+
 
             main_menu(chat_id)
-
 
 
 
@@ -206,11 +231,13 @@ async def receive_update(request: Request):
 
         elif text == "🎮 بازی‌ها":
 
+
             games_menu(chat_id)
 
 
 
         elif text == "🏠 اتاق بازی":
+
 
             open_room_menu(chat_id)
 
@@ -218,11 +245,13 @@ async def receive_update(request: Request):
 
         elif text == "👤 پروفایل":
 
+
             show_profile(chat_id)
 
 
 
         elif text == "🪙 کیف پول":
+
 
             show_wallet(chat_id)
 
@@ -230,12 +259,17 @@ async def receive_update(request: Request):
 
         elif text == "🎁 جایزه روزانه":
 
+
             daily(chat_id)
-                    # ==========================================
+
+
+
+        # ==========================================
         # مدیریت اتاق
         # ==========================================
 
         elif text == "➕ ساخت اتاق":
+
 
             open_create_room(chat_id)
 
@@ -243,31 +277,30 @@ async def receive_update(request: Request):
 
         elif text == "🚪 ورود به اتاق":
 
+
             request_join(chat_id)
 
 
 
-        elif text == "🚪 خروج از اتاق":
+        elif text == "🚪 خروج از بازی":
+
+
+            states.pop(
+                chat_id,
+                None
+            )
+
 
             exit_room(chat_id)
 
 
 
-        # خروج از بازی‌های ساده
-        elif text == "🚪 خروج از بازی":
-
-            states.pop(chat_id, None)
-
-            main_menu(chat_id)
-
-
-
-
         # ==========================================
-        # ساخت بازی‌ها
+        # ساخت بازی
         # ==========================================
 
         elif text == "✂️ سنگ کاغذ قیچی":
+
 
             create_rps_room(chat_id)
 
@@ -275,16 +308,18 @@ async def receive_update(request: Request):
 
         elif text == "⭕ دوز":
 
+
             create_tictactoe_room(chat_id)
 
 
 
-
-        # ==========================================
+        # ادامه در بخش بعد...
+                # ==========================================
         # بازی حدس عدد
         # ==========================================
 
         elif text == "🔢 حدس عدد":
+
 
             guess_start(
                 states,
@@ -298,12 +333,12 @@ async def receive_update(request: Request):
             and states[chat_id].get("game") == "guess"
         ):
 
+
             guess_check(
                 states,
                 chat_id,
                 text
             )
-
 
 
 
@@ -313,18 +348,28 @@ async def receive_update(request: Request):
 
         elif text == "🎲 تاس":
 
-            dice_start(chat_id)
+
+            dice_start(
+                chat_id
+            )
 
 
 
         elif text == "🎲 ریختن تاس":
 
-            dice_roll(chat_id)
-                    # ==========================================
+
+            dice_roll(
+                chat_id
+            )
+
+
+
+        # ==========================================
         # پیام ناشناخته
         # ==========================================
 
         else:
+
 
             send_message(
                 chat_id,
@@ -343,6 +388,7 @@ async def receive_update(request: Request):
 
         try:
 
+
             send_message(
                 chat_id,
                 "❌ خطایی در ربات رخ داد."
@@ -350,6 +396,7 @@ async def receive_update(request: Request):
 
 
         except:
+
 
             pass
 
@@ -375,6 +422,7 @@ async def receive_update(request: Request):
 # ==========================================
 
 if __name__ == "__main__":
+
 
     import uvicorn
 
