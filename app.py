@@ -45,6 +45,12 @@ from handlers.rooms import (
     exit_room
 )
 
+from handlers import tictactoe as ttt_handler
+
+from rooms.manager import (
+    get_player_room
+)
+
 
 # ==========================================
 # Bangame
@@ -81,10 +87,9 @@ async def receive_update(request: Request):
 
     data = await request.json()
 
-    print("\n==============================")
-    print("📩 New Update")
+    print("\n========== UPDATE ==========")
     print(data)
-    print("==============================\n")
+    print("============================\n")
 
     try:
 
@@ -104,20 +109,46 @@ async def receive_update(request: Request):
             msg.get("aux_data", {}).get("button_id")
             or msg.get("text", "")
         ).strip()
-
-        # ثبت کاربر
+                # اگر کاربر وجود ندارد
         if not get_user(chat_id):
-
             add_user(chat_id)
 
-        # اگر کاربر در حال وارد کردن کد اتاق باشد
+        # اگر منتظر وارد کردن کد اتاق است
         if receive_room_code(chat_id, text):
-
             return {
                 "ok": True
             }
-                # ==========================================
-        # Start
+
+        # ==========================================
+        # بازی‌های آنلاین
+        # ==========================================
+
+        room = get_player_room(chat_id)
+
+        if room:
+
+            button_id = (
+                msg.get("aux_data", {})
+                .get("button_id")
+            )
+
+            # ---------- دوز ----------
+            if room.game == "tictactoe" and button_id:
+
+                ttt_handler.handle(
+                    room,
+                    chat_id,
+                    {
+                        "button_id": button_id
+                    }
+                )
+
+                return {
+                    "ok": True
+                }
+
+        # ==========================================
+        # /start
         # ==========================================
 
         if text == "/start":
@@ -126,69 +157,59 @@ async def receive_update(request: Request):
 
             main_menu(chat_id)
 
-
         # ==========================================
-        # Main Menu
+        # منوی اصلی
         # ==========================================
 
         elif text == "🎮 بازی‌ها":
 
             games_menu(chat_id)
 
-
         elif text == "🏠 اتاق بازی":
 
             open_room_menu(chat_id)
-
 
         elif text == "👤 پروفایل":
 
             show_profile(chat_id)
 
-
         elif text == "🪙 کیف پول":
 
             show_wallet(chat_id)
 
-
         elif text == "🎁 جایزه روزانه":
 
             daily(chat_id)
-
-
-        # ==========================================
-        # Room Menu
+                    # ==========================================
+        # مدیریت اتاق
         # ==========================================
 
         elif text == "➕ ساخت اتاق":
 
             open_create_room(chat_id)
 
-
         elif text == "🚪 ورود به اتاق":
 
             request_join(chat_id)
 
-
-        elif text == "🚪 خروج":
+        elif text == "🚪 خروج از اتاق":
 
             exit_room(chat_id)
 
-
         # ==========================================
-        # Create Games
+        # ساخت بازی‌ها
         # ==========================================
 
         elif text == "✂️ سنگ کاغذ قیچی":
 
             create_rps_room(chat_id)
 
-
         elif text == "⭕ دوز":
 
             create_tictactoe_room(chat_id)
-                    # ==========================================
-        # Guess Number
+
+        # ==========================================
+        # بازی حدس عدد
         # ==========================================
 
         elif text == "🔢 حدس عدد":
@@ -197,7 +218,6 @@ async def receive_update(request: Request):
                 states,
                 chat_id
             )
-
 
         elif (
             chat_id in states
@@ -210,23 +230,19 @@ async def receive_update(request: Request):
                 text
             )
 
-
         # ==========================================
-        # Dice
+        # بازی تاس
         # ==========================================
 
         elif text == "🎲 تاس":
 
             dice_start(chat_id)
 
-
         elif text == "🎲 ریختن تاس":
 
             dice_roll(chat_id)
-
-
-        # ==========================================
-        # Unknown Command
+                    # ==========================================
+        # پیام ناشناخته
         # ==========================================
 
         else:
@@ -235,11 +251,12 @@ async def receive_update(request: Request):
                 chat_id,
                 "❓ دستور را متوجه نشدم."
             )
+
     except Exception as e:
 
-        print("\n========== ERROR ==========")
-        print(e)
-        print("===========================\n")
+        print("================================")
+        print("ERROR:", e)
+        print("================================")
 
         try:
 
@@ -248,21 +265,22 @@ async def receive_update(request: Request):
                 "❌ خطایی در ربات رخ داد."
             )
 
-        except Exception as err:
+        except:
 
-            print("Send Error:", err)
+            pass
 
     end_time = time.time()
 
     print(
-        f"⏱ Process Time: {end_time - start_time:.2f}s"
+        f"⚡ Process Time: "
+        f"{round(end_time - start_time, 3)} sec"
     )
 
     return {
         "ok": True
     }
 # ==========================================
-# Run
+# Run Server
 # ==========================================
 
 if __name__ == "__main__":
@@ -275,3 +293,4 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     )
+    

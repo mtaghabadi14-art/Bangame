@@ -14,18 +14,16 @@ from rooms.manager import (
     get_player_room
 )
 
-
 waiting_for_room_code = set()
 
 
-# -----------------------------
+# ==========================================
 # منوی اتاق
-# -----------------------------
+# ==========================================
 
 def open_room_menu(chat_id):
 
     room_menu(chat_id)
-
 
 
 def open_create_room(chat_id):
@@ -33,10 +31,9 @@ def open_create_room(chat_id):
     create_room_menu(chat_id)
 
 
-
-# -----------------------------
+# ==========================================
 # ساخت اتاق سنگ کاغذ قیچی
-# -----------------------------
+# ==========================================
 
 def create_rps_room(chat_id):
 
@@ -47,7 +44,6 @@ def create_rps_room(chat_id):
         max_players=2
     )
 
-
     if room is None:
 
         send_message(
@@ -57,20 +53,18 @@ def create_rps_room(chat_id):
 
         return
 
-
     send_message(
         chat_id,
-        f"✅ اتاق ساخته شد.\n\n"
+        f"✅ اتاق سنگ کاغذ قیچی ساخته شد.\n\n"
         f"🔑 کد اتاق: {room.room_id}\n"
         f"👥 1 / 2 بازیکن\n\n"
         f"⏳ منتظر بازیکن دوم..."
     )
 
 
-
-# -----------------------------
+# ==========================================
 # ساخت اتاق دوز
-# -----------------------------
+# ==========================================
 
 def create_tictactoe_room(chat_id):
 
@@ -81,7 +75,6 @@ def create_tictactoe_room(chat_id):
         max_players=2
     )
 
-
     if room is None:
 
         send_message(
@@ -90,7 +83,6 @@ def create_tictactoe_room(chat_id):
         )
 
         return
-
 
     send_message(
         chat_id,
@@ -101,10 +93,9 @@ def create_tictactoe_room(chat_id):
     )
 
 
-
-# -----------------------------
-# درخواست ورود به اتاق
-# -----------------------------
+# ==========================================
+# درخواست ورود
+# ==========================================
 
 def request_join(chat_id):
 
@@ -116,26 +107,21 @@ def request_join(chat_id):
     )
 
 
-
-# -----------------------------
-# دریافت کد اتاق
-# -----------------------------
+# ==========================================
+# ورود به اتاق
+# ==========================================
 
 def receive_room_code(chat_id, code):
 
     if chat_id not in waiting_for_room_code:
-
         return False
 
-
     waiting_for_room_code.remove(chat_id)
-
 
     room = join_room(
         code,
         chat_id
     )
-
 
     if room is None:
 
@@ -146,45 +132,62 @@ def receive_room_code(chat_id, code):
 
         return True
 
+    # اطلاع به هر دو بازیکن
+    for player in room.players:
 
+        send_message(
+            player,
+            f"🎉 بازیکن دوم وارد شد.\n"
+            f"👥 {len(room.players)} / {room.max_players}"
+        )
 
-    send_message(
-        room.host,
-        "🎉 بازیکن دوم وارد اتاق شد."
-    )
-
-
-    send_message(
-        chat_id,
-        "✅ وارد اتاق شدی."
-    )
-
-
-    # شروع بازی دوز
+    # شروع دوز
     if room.game == "tictactoe":
 
-     send_message(
-        room.host,
-        "🔥 دوز شروع شد!"
-    )
+        for player in room.players:
 
-    tictactoe.start(room)
+            send_message(
+                player,
+                "🔥 بازی دوز شروع شد!"
+            )
 
+        tictactoe.start(room)
 
     return True
 
 
-
-# -----------------------------
+# ==========================================
 # خروج از اتاق
-# -----------------------------
+# ==========================================
 
 def exit_room(chat_id):
 
-    leave_room(chat_id)
+    room = get_player_room(chat_id)
 
+    if room is None:
+
+        send_message(
+            chat_id,
+            "❌ داخل هیچ اتاقی نیستی."
+        )
+
+        return
+
+    leave_room(chat_id)
 
     send_message(
         chat_id,
         "🚪 از اتاق خارج شدی."
     )
+
+    # اگر اتاق هنوز وجود دارد، به بازیکنان باقی‌مانده اطلاع بده
+    room = get_player_room(chat_id)
+
+    if room:
+
+        for player in room.players:
+
+            send_message(
+                player,
+                "⚠️ یکی از بازیکنان از اتاق خارج شد."
+            )
