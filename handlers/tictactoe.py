@@ -57,7 +57,7 @@ def board_buttons(board):
     buttons.append(
         [
             {
-                "text": "🚪 خروج",
+                "text": "🚪 خروج از بازی",
                 "id": "exit"
             }
         ]

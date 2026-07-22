@@ -7,14 +7,19 @@ from database import add_coins
 from level import give_xp
 
 
+
 def keypad():
 
     return [
         ["🎲 ریختن تاس"],
-        ["🚪 خروج"]
+        ["🚪 خروج از بازی"]
     ]
 
 
+
+# ==========================================
+# شروع بازی
+# ==========================================
 
 def start(chat_id):
 
@@ -25,6 +30,10 @@ def start(chat_id):
     )
 
 
+
+# ==========================================
+# ریختن تاس
+# ==========================================
 
 def roll(chat_id):
 
@@ -39,11 +48,19 @@ def roll(chat_id):
     )
 
 
+
     if player > bot:
 
-        add_coins(chat_id, 10)
+        add_coins(
+            chat_id,
+            10
+        )
 
-        level = give_xp(chat_id, 3)
+
+        level = give_xp(
+            chat_id,
+            3
+        )
 
 
         message += (
@@ -62,9 +79,15 @@ def roll(chat_id):
             )
 
 
+
     elif player < bot:
 
-        give_xp(chat_id, 1)
+
+        give_xp(
+            chat_id,
+            1
+        )
+
 
         message += (
             "😢 ربات برنده شد.\n"
@@ -72,9 +95,15 @@ def roll(chat_id):
         )
 
 
+
     else:
 
-        give_xp(chat_id, 1)
+
+        give_xp(
+            chat_id,
+            1
+        )
+
 
         message += (
             "🤝 مساوی شد.\n"
@@ -82,9 +111,9 @@ def roll(chat_id):
         )
 
 
+
     send_keypad(
         chat_id,
         message,
         keypad()
     )
-    

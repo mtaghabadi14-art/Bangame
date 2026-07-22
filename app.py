@@ -254,7 +254,7 @@ async def receive_update(request: Request):
 
 
         # خروج از بازی‌های ساده
-        elif text == "🚪 خروج":
+        elif text == "🚪 خروج از بازی":
 
             states.pop(chat_id, None)
 

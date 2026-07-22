@@ -1,7 +1,4 @@
-from rubika import (
-    send_message,
-    send_keypad
-)
+from rubika import send_message, send_keypad
 
 from games import guess
 
@@ -14,7 +11,7 @@ from level import give_xp
 def keypad():
 
     return [
-        ["🚪 خروج"]
+        ["🚪 خروج از بازی"]
     ]
 
 
@@ -27,6 +24,7 @@ def start(states, chat_id):
 
     number = guess.create_game()
 
+
     states[chat_id] = {
         "game": "guess",
         "number": number,
@@ -36,14 +34,14 @@ def start(states, chat_id):
 
     send_keypad(
         chat_id,
-        "🔢 یک عدد بین 1 تا 100 حدس بزن.\n\n🚪 برای خروج بزن.",
+        "🔢 یک عدد بین 1 تا 100 حدس بزن.\n\n🚪 برای خروج از بازی بزن.",
         keypad()
     )
 
 
 
 # ==========================================
-# بررسی جواب
+# بررسی حدس
 # ==========================================
 
 def check(states, chat_id, text):
@@ -153,7 +151,8 @@ def check(states, chat_id, text):
 
 
     states.pop(
-        chat_id
+        chat_id,
+        None
     )
 
 
