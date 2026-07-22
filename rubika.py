@@ -17,6 +17,16 @@ BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
 # ==========================================
 
 session = requests.Session()
+from requests.adapters import HTTPAdapter
+
+
+session.mount(
+    "https://",
+    HTTPAdapter(
+        pool_connections=10,
+        pool_maxsize=10
+    )
+)
 
 session.headers.update({
     "Content-Type": "application/json"
@@ -39,7 +49,7 @@ def call_api(method, data=None):
         response = session.post(
             BASE_URL + method,
             json=data,
-            timeout=10
+            timeout=(3, 15)
         )
 
         response.raise_for_status()
