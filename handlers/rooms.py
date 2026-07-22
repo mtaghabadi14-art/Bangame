@@ -6,6 +6,7 @@ from handlers.menu import (
 )
 
 from handlers import tictactoe
+from handlers import rps
 
 from rooms.manager import (
     create_room,
@@ -13,6 +14,7 @@ from rooms.manager import (
     leave_room,
     get_player_room
 )
+
 
 waiting_for_room_code = set()
 
@@ -53,6 +55,7 @@ def create_rps_room(chat_id):
 
         return
 
+
     send_message(
         chat_id,
         f"✅ اتاق سنگ کاغذ قیچی ساخته شد.\n\n"
@@ -84,6 +87,7 @@ def create_tictactoe_room(chat_id):
 
         return
 
+
     send_message(
         chat_id,
         f"⭕ اتاق دوز ساخته شد.\n\n"
@@ -114,14 +118,18 @@ def request_join(chat_id):
 def receive_room_code(chat_id, code):
 
     if chat_id not in waiting_for_room_code:
+
         return False
 
+
     waiting_for_room_code.remove(chat_id)
+
 
     room = join_room(
         code,
         chat_id
     )
+
 
     if room is None:
 
@@ -132,7 +140,9 @@ def receive_room_code(chat_id, code):
 
         return True
 
-    # اطلاع به هر دو بازیکن
+
+    # اطلاع به بازیکنان
+
     for player in room.players:
 
         send_message(
@@ -141,7 +151,9 @@ def receive_room_code(chat_id, code):
             f"👥 {len(room.players)} / {room.max_players}"
         )
 
-    # شروع دوز
+
+    # شروع بازی
+
     if room.game == "tictactoe":
 
         for player in room.players:
@@ -153,7 +165,21 @@ def receive_room_code(chat_id, code):
 
         tictactoe.start(room)
 
+
+    elif room.game == "rps":
+
+        for player in room.players:
+
+            send_message(
+                player,
+                "✂️ بازی سنگ کاغذ قیچی شروع شد!"
+            )
+
+        rps.start(room)
+
+
     return True
+
 
 
 # ==========================================
@@ -164,6 +190,7 @@ def exit_room(chat_id):
 
     room = get_player_room(chat_id)
 
+
     if room is None:
 
         send_message(
@@ -173,15 +200,18 @@ def exit_room(chat_id):
 
         return
 
+
     leave_room(chat_id)
+
 
     send_message(
         chat_id,
         "🚪 از اتاق خارج شدی."
     )
 
-    # اگر اتاق هنوز وجود دارد، به بازیکنان باقی‌مانده اطلاع بده
+
     room = get_player_room(chat_id)
+
 
     if room:
 
@@ -191,3 +221,4 @@ def exit_room(chat_id):
                 player,
                 "⚠️ یکی از بازیکنان از اتاق خارج شد."
             )
+            
