@@ -1,12 +1,31 @@
 import os
+import time
 import requests
 
+
+# ==========================================
+# Bangame Rubika API v2
+# ==========================================
 
 TOKEN = os.getenv("RUBIKA_TOKEN")
 
 BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
 
 
+# ==========================================
+# Session
+# ==========================================
+
+session = requests.Session()
+
+session.headers.update({
+    "Content-Type": "application/json"
+})
+
+
+# ==========================================
+# API
+# ==========================================
 
 def call_api(method, data=None):
 
@@ -15,24 +34,35 @@ def call_api(method, data=None):
 
     try:
 
-        response = requests.post(
+        start = time.time()
+
+        response = session.post(
             BASE_URL + method,
             json=data,
-            timeout=30
+            timeout=10
         )
+
+        response.raise_for_status()
 
         result = response.json()
 
-        print("API:", method)
-        print("DATA:", data)
-        print("RESULT:", result)
+        end = time.time()
+
+        print(f"✅ {method} ({end-start:.2f}s)")
 
         return result
 
+    except requests.exceptions.Timeout:
+
+        print("❌ Timeout")
+
+        return {
+            "status": "TIMEOUT"
+        }
 
     except Exception as e:
 
-        print("Rubika Error:", e)
+        print("❌", e)
 
         return {
             "status": "ERROR",
@@ -40,6 +70,9 @@ def call_api(method, data=None):
         }
 
 
+# ==========================================
+# Send Message
+# ==========================================
 
 def send_message(chat_id, text):
 
@@ -52,6 +85,9 @@ def send_message(chat_id, text):
     )
 
 
+# ==========================================
+# Send Keypad
+# ==========================================
 
 def send_keypad(chat_id, text, buttons):
 
@@ -59,24 +95,35 @@ def send_keypad(chat_id, text, buttons):
 
     for row in buttons:
 
-        button_list = []
+        button_row = []
 
         for button in row:
 
-            button_list.append(
-                {
-                    "id": button,
-                    "type": "Simple",
-                    "button_text": button
-                }
-            )
+            if isinstance(button, dict):
+
+                button_row.append(
+                    {
+                        "id": button["id"],
+                        "type": "Simple",
+                        "button_text": button["text"]
+                    }
+                )
+
+            else:
+
+                button_row.append(
+                    {
+                        "id": button,
+                        "type": "Simple",
+                        "button_text": button
+                    }
+                )
 
         rows.append(
             {
-                "buttons": button_list
+                "buttons": button_row
             }
         )
-
 
     return call_api(
         "sendMessage",
@@ -90,10 +137,11 @@ def send_keypad(chat_id, text, buttons):
             }
         }
     )
+# ==========================================
+# Remove Keypad
+# ==========================================
 
-
-
-def remove_keypad(chat_id, text):
+def remove_keypad(chat_id, text="✅"):
 
     return call_api(
         "sendMessage",
@@ -105,6 +153,9 @@ def remove_keypad(chat_id, text):
     )
 
 
+# ==========================================
+# Get Bot Information
+# ==========================================
 
 def get_me():
 
@@ -113,6 +164,9 @@ def get_me():
     )
 
 
+# ==========================================
+# Update Webhook
+# ==========================================
 
 def update_bot_endpoint(url):
 
@@ -123,3 +177,9 @@ def update_bot_endpoint(url):
             "type": "ReceiveUpdate"
         }
     )
+
+
+# ==========================================
+# پایان فایل
+# Bangame Rubika API v2
+# ==========================================

@@ -1,6 +1,10 @@
 from fastapi import FastAPI, Request
+import time
 
-from rubika import send_message
+from rubika import (
+    send_message,
+    remove_keypad
+)
 
 from database import (
     create_tables,
@@ -42,16 +46,22 @@ from handlers.rooms import (
 )
 
 
-import time
-
+# ==========================================
+# Bangame
+# ==========================================
 
 app = FastAPI()
 
-
 create_tables()
 
-
+# وضعیت بازیکنان
 states = {}
+
+
+# ==========================================
+# Home
+# ==========================================
+
 @app.get("/")
 def home():
 
@@ -60,19 +70,25 @@ def home():
     }
 
 
+# ==========================================
+# Webhook
+# ==========================================
 
 @app.post("/receiveUpdate")
 async def receive_update(request: Request):
 
+    start_time = time.time()
+
     data = await request.json()
 
+    print("\n==============================")
+    print("📩 New Update")
     print(data)
-
+    print("==============================\n")
 
     try:
 
         update = data.get("update", {})
-
 
         if update.get("type") != "NewMessage":
 
@@ -80,38 +96,29 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         chat_id = update["chat_id"]
 
         msg = update["new_message"]
-
 
         text = (
             msg.get("aux_data", {}).get("button_id")
             or msg.get("text", "")
         ).strip()
 
-
-
+        # ثبت کاربر
         if not get_user(chat_id):
 
             add_user(chat_id)
 
-
-
-        # دریافت کد اتاق
-
+        # اگر کاربر در حال وارد کردن کد اتاق باشد
         if receive_room_code(chat_id, text):
 
             return {
                 "ok": True
             }
-
-
-
-        # -----------------------------
-        # شروع
-        # -----------------------------
+                # ==========================================
+        # Start
+        # ==========================================
 
         if text == "/start":
 
@@ -120,15 +127,13 @@ async def receive_update(request: Request):
             main_menu(chat_id)
 
 
-
-        # -----------------------------
-        # منوی اصلی
-        # -----------------------------
+        # ==========================================
+        # Main Menu
+        # ==========================================
 
         elif text == "🎮 بازی‌ها":
 
             games_menu(chat_id)
-
 
 
         elif text == "🏠 اتاق بازی":
@@ -136,11 +141,9 @@ async def receive_update(request: Request):
             open_room_menu(chat_id)
 
 
-
         elif text == "👤 پروفایل":
 
             show_profile(chat_id)
-
 
 
         elif text == "🪙 کیف پول":
@@ -148,63 +151,45 @@ async def receive_update(request: Request):
             show_wallet(chat_id)
 
 
-
         elif text == "🎁 جایزه روزانه":
 
             daily(chat_id)
-                    # -----------------------------
-        # منوی ساخت اتاق
-        # -----------------------------
+
+
+        # ==========================================
+        # Room Menu
+        # ==========================================
 
         elif text == "➕ ساخت اتاق":
 
             open_create_room(chat_id)
 
 
-
-        # -----------------------------
-        # ساخت سنگ کاغذ قیچی
-        # -----------------------------
-
-        elif text == "✂️ سنگ کاغذ قیچی":
-
-            create_rps_room(chat_id)
-
-
-
-        # -----------------------------
-        # ساخت دوز
-        # -----------------------------
-
-        elif text == "⭕ دوز":
-
-            create_tictactoe_room(chat_id)
-
-
-
-        # -----------------------------
-        # ورود به اتاق
-        # -----------------------------
-
         elif text == "🚪 ورود به اتاق":
 
             request_join(chat_id)
 
-
-
-        # -----------------------------
-        # خروج از اتاق
-        # -----------------------------
 
         elif text == "🚪 خروج":
 
             exit_room(chat_id)
 
 
+        # ==========================================
+        # Create Games
+        # ==========================================
 
-        # -----------------------------
-        # حدس عدد
-        # -----------------------------
+        elif text == "✂️ سنگ کاغذ قیچی":
+
+            create_rps_room(chat_id)
+
+
+        elif text == "⭕ دوز":
+
+            create_tictactoe_room(chat_id)
+                    # ==========================================
+        # Guess Number
+        # ==========================================
 
         elif text == "🔢 حدس عدد":
 
@@ -212,7 +197,6 @@ async def receive_update(request: Request):
                 states,
                 chat_id
             )
-
 
 
         elif (
@@ -227,23 +211,23 @@ async def receive_update(request: Request):
             )
 
 
-
-        # -----------------------------
-        # تاس
-        # -----------------------------
+        # ==========================================
+        # Dice
+        # ==========================================
 
         elif text == "🎲 تاس":
 
             dice_start(chat_id)
 
 
-
         elif text == "🎲 ریختن تاس":
 
             dice_roll(chat_id)
-                    # -----------------------------
-        # پیام ناشناخته
-        # -----------------------------
+
+
+        # ==========================================
+        # Unknown Command
+        # ==========================================
 
         else:
 
@@ -251,12 +235,11 @@ async def receive_update(request: Request):
                 chat_id,
                 "❓ دستور را متوجه نشدم."
             )
-
-
     except Exception as e:
 
-        print("ERROR:", e)
-
+        print("\n========== ERROR ==========")
+        print(e)
+        print("===========================\n")
 
         try:
 
@@ -265,22 +248,26 @@ async def receive_update(request: Request):
                 "❌ خطایی در ربات رخ داد."
             )
 
-        except:
+        except Exception as err:
 
-            pass
+            print("Send Error:", err)
 
+    end_time = time.time()
 
+    print(
+        f"⏱ Process Time: {end_time - start_time:.2f}s"
+    )
 
     return {
         "ok": True
     }
-
-
+# ==========================================
+# Run
+# ==========================================
 
 if __name__ == "__main__":
 
     import uvicorn
-
 
     uvicorn.run(
         "app:app",
