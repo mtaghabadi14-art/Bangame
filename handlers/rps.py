@@ -16,7 +16,7 @@ from rooms.manager import (
     delete_room
 )
 
-from handlers.menu import room_menu
+from handlers.rooms import open_room_menu
 
 
 
@@ -105,7 +105,6 @@ def finish(room):
 
     players = room.players
 
-
     p1 = players[0]
     p2 = players[1]
 
@@ -121,8 +120,8 @@ def finish(room):
 
 
     print("========== RPS DEBUG ==========")
-    print("PLAYER 1:", p1, move1)
-    print("PLAYER 2:", p2, move2)
+    print("P1:", p1, move1)
+    print("P2:", p2, move2)
     print("RESULT:", result)
     print("===============================")
 
@@ -163,6 +162,7 @@ def finish(room):
     # ------------------------------
 
     elif result == "player1":
+
 
         add_coins(
             p1,
@@ -225,6 +225,7 @@ def finish(room):
     # ------------------------------
 
     else:
+
 
         add_coins(
             p2,
@@ -327,7 +328,7 @@ def handle(room, player, data):
 
 
         # برگشت به اتاق بازی
-        room_menu(player)
+        open_room_menu(player)
 
 
 
@@ -347,7 +348,7 @@ def handle(room, player, data):
 
 
             # برگشت حریف به اتاق بازی
-            room_menu(p)
+            open_room_menu(p)
 
 
             leave_room(p)
@@ -381,3 +382,4 @@ def handle(room, player, data):
             player,
             choices[button_id]
         )
+        
