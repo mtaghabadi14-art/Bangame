@@ -45,6 +45,7 @@ from handlers import leaderboard
 
 from handlers import typing as typing_handler
 from handlers import math_game
+from handlers import memory as memory_handler
 
 from handlers.guess import (
     start as guess_start,
@@ -426,7 +427,32 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+        # ==============================
+        # بازی حافظه
+        # ==============================
 
+        elif text == "🧠 بازی حافظه":
+
+            memory_handler.start(chat_id)
+
+            return {
+                "ok": True
+            }
+
+
+        elif (
+            chat_id in memory_handler.games
+            or chat_id in memory_handler.waiting_level
+        ):
+
+            memory_handler.check(
+                chat_id,
+                text
+            )
+
+            return {
+                "ok": True
+            }
         # ==============================
         # بازی حدس عدد
         # ==============================
