@@ -1,4 +1,3 @@
-print("########## RPS.PY LOADED ##########")
 from rubika import (
     send_keypad,
     send_message,
@@ -8,7 +7,6 @@ from rubika import (
 from games import rps
 
 from database import add_coins
-
 from level import give_xp
 
 from rooms.manager import (
@@ -33,7 +31,7 @@ def start(room):
 
         send_keypad(
             player,
-            "✂️ سنگ کاغذ قیچی شروع شد!\n\n"
+            "✂️ بازی سنگ کاغذ قیچی شروع شد!\n\n"
             "یکی را انتخاب کن 👇",
             [
                 [
@@ -100,21 +98,11 @@ def finish(room):
     move1 = room.data["moves"][p1]
     move2 = room.data["moves"][p2]
 
-    result = rps.play(
-        move1,
-        move2
-    )
+    result = rps.play(move1, move2)
 
-    print("========== RPS DEBUG ==========")
-    print("P1:", p1, move1)
-    print("P2:", p2, move2)
-    print("RESULT:", result)
-    print("===============================")
-
-
-    # --------------------------------------
+    # -------------------------
     # مساوی
-    # --------------------------------------
+    # -------------------------
 
     if result == "draw":
 
@@ -123,116 +111,125 @@ def finish(room):
 
         text = (
             "🤝 مساوی شد!\n\n"
-            f"👤 بازیکن اول: {move1}\n"
-            f"👤 بازیکن دوم: {move2}\n\n"
+            f"👤 تو: {move1}\n"
+            f"👤 حریف: {move2}\n\n"
             "⭐ +1 XP"
         )
 
         send_message(p1, text)
+
+        text = (
+            "🤝 مساوی شد!\n\n"
+            f"👤 تو: {move2}\n"
+            f"👤 حریف: {move1}\n\n"
+            "⭐ +1 XP"
+        )
+
         send_message(p2, text)
 
-
-    # --------------------------------------
+    # -------------------------
     # بازیکن اول برنده
-    # --------------------------------------
+    # -------------------------
 
     elif result == "player1":
 
         add_coins(p1, 5)
 
         level = give_xp(p1, 2)
-
         give_xp(p2, 1)
 
         text1 = (
             "🏆 تو بردی!\n\n"
-            f"👤 انتخاب تو: {move1}\n"
-            f"👤 انتخاب حریف: {move2}\n\n"
+            f"👤 تو: {move1}\n"
+            f"👤 حریف: {move2}\n\n"
             "🪙 +5 سکه\n"
             "⭐ +2 XP"
         )
 
         if level["level_up"]:
-
             text1 += (
-                "\n\n🎉 LEVEL UP!"
+                f"\n\n🎉 LEVEL UP!"
                 f"\n⭐ Level {level['level']}"
                 f"\n🪙 +{level['reward']} سکه"
             )
 
         text2 = (
             "😢 باختی!\n\n"
-            f"👤 انتخاب تو: {move2}\n"
-            f"👤 انتخاب حریف: {move1}\n\n"
+            f"👤 تو: {move2}\n"
+            f"👤 حریف: {move1}\n\n"
             "⭐ +1 XP"
         )
 
         send_message(p1, text1)
         send_message(p2, text2)
-            # --------------------------------------
+
+    # -------------------------
     # بازیکن دوم برنده
-    # --------------------------------------
+    # -------------------------
 
     else:
 
         add_coins(p2, 5)
 
         level = give_xp(p2, 2)
-
         give_xp(p1, 1)
 
         text2 = (
             "🏆 تو بردی!\n\n"
-            f"👤 انتخاب تو: {move2}\n"
-            f"👤 انتخاب حریف: {move1}\n\n"
+            f"👤 تو: {move2}\n"
+            f"👤 حریف: {move1}\n\n"
             "🪙 +5 سکه\n"
             "⭐ +2 XP"
         )
 
         if level["level_up"]:
-
             text2 += (
-                "\n\n🎉 LEVEL UP!"
+                f"\n\n🎉 LEVEL UP!"
                 f"\n⭐ Level {level['level']}"
                 f"\n🪙 +{level['reward']} سکه"
             )
 
         text1 = (
             "😢 باختی!\n\n"
-            f"👤 انتخاب تو: {move1}\n"
-            f"👤 انتخاب حریف: {move2}\n\n"
+            f"👤 تو: {move1}\n"
+            f"👤 حریف: {move2}\n\n"
             "⭐ +1 XP"
         )
 
         send_message(p1, text1)
         send_message(p2, text2)
 
-    room.started = False
+    # -------------------------
+    # پایان بازی
+    # -------------------------
 
+    room.started = False
     room.data["moves"] = {}
 
-    delete_room(
-        room.room_id
-    )
-# ==========================================
-# مدیریت دکمه‌ها
+    remove_keypad(p1)
+    remove_keypad(p2)
+
+    leave_room(p1)
+    leave_room(p2)
+
+    delete_room(room.room_id)
+
+    room_menu(p1)
+    room_menu(p2)
+    # ==========================================
+# مدیریت کلیک‌ها
 # ==========================================
 
 def handle(room, player, data):
-    def handle(room, player, data):
-
-     print(">>>> INSIDE RPS HANDLE <<<<")
-     print("########## HANDLERS/RPS.PY ##########")
-    print("BUTTON:", data.get("button_id"))
 
     button_id = data.get("button_id")
 
     if not button_id:
         return
 
-    # --------------------------------------
+    # -------------------------
     # خروج از بازی
-    # --------------------------------------
+    # -------------------------
 
     if button_id == "exit":
 
@@ -241,14 +238,14 @@ def handle(room, player, data):
             if p != player
         ]
 
-        leave_room(player)
-
-        send_message(
-        player,
-        "🚪 از بازی خارج شدی."
-)
+        remove_keypad(
+            player,
+            "🚪 از بازی خارج شدی."
+        )
 
         room_menu(player)
+
+        leave_room(player)
 
         for p in other_players:
 
@@ -257,20 +254,22 @@ def handle(room, player, data):
                 "⚠️ حریف از بازی خارج شد."
             )
 
-            send_message(
+            remove_keypad(
                 p,
                 "🏁 بازی پایان یافت."
             )
 
+            room_menu(p)
+
             leave_room(p)
 
-            room_menu(p)
+        delete_room(room.room_id)
 
         return
 
-    # --------------------------------------
+    # -------------------------
     # انتخاب‌ها
-    # --------------------------------------
+    # -------------------------
 
     choices = {
         "rock": "🪨 سنگ",
