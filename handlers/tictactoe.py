@@ -4,7 +4,7 @@ from rubika import (
     remove_keypad
 )
 
-from handlers.menu import games_menu
+from handlers.menu import room_menu
 
 from games import tictactoe
 
@@ -207,7 +207,7 @@ def move(room, player, button_id):
                 )
 
 
-            games_menu(p)
+            room_menu(p)
 
 
 
@@ -239,7 +239,7 @@ def move(room, player, button_id):
             )
 
 
-            games_menu(p)
+            room_menu(p)
 
 
 
@@ -316,7 +316,7 @@ def handle(room, player, data):
         )
 
 
-        games_menu(player)
+        room_menu(player)
 
 
 
@@ -335,7 +335,7 @@ def handle(room, player, data):
             )
 
 
-            games_menu(p)
+            room_menu(p)
 
 
             leave_room(p)

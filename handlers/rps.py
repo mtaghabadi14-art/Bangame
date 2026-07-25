@@ -16,7 +16,7 @@ from rooms.manager import (
     delete_room
 )
 
-from handlers.menu import games_menu
+from handlers.menu import room_menu
 
 
 # ==========================================
@@ -226,7 +226,7 @@ def handle(room, player, data):
             "🚪 از بازی خارج شدی."
         )
 
-        games_menu(player)
+        room_menu(player)
 
         for p in other_players:
 
@@ -240,7 +240,7 @@ def handle(room, player, data):
                 "🏁 بازی پایان یافت."
             )
 
-            games_menu(p)
+            room_menu(p)
 
             leave_room(p)
 
