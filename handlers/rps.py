@@ -1,3 +1,4 @@
+print("########## RPS.PY LOADED ##########")
 from rubika import (
     send_keypad,
     send_message,
