@@ -9,14 +9,44 @@ def show_profile(chat_id):
 
     user = get_user(chat_id)
 
-    _, coins, level, xp = user
+    if not user:
+
+        send_message(
+            chat_id,
+            "❌ اطلاعات کاربر پیدا نشد."
+        )
+        return
+
+    (
+        _,
+        coins,
+        level,
+        xp,
+        typing_games,
+        typing_best_time,
+        typing_best_wpm
+    ) = user
+
+    if typing_best_time == 0:
+        best_time = "-"
+    else:
+        best_time = f"{typing_best_time:.2f} ثانیه"
+
+    if typing_best_wpm == 0:
+        best_wpm = "-"
+    else:
+        best_wpm = f"{round(typing_best_wpm)} WPM"
 
     send_message(
         chat_id,
         f"👤 پروفایل\n\n"
         f"🪙 سکه: {coins}\n"
         f"⭐ لول: {level}\n"
-        f"✨ XP: {xp}"
+        f"✨ XP: {xp}\n\n"
+        f"⌨️ سرعت تایپ\n"
+        f"🎮 تعداد بازی: {typing_games}\n"
+        f"🏆 بهترین زمان: {best_time}\n"
+        f"⚡ بهترین سرعت: {best_wpm}"
     )
 
 
@@ -24,7 +54,7 @@ def show_wallet(chat_id):
 
     user = get_user(chat_id)
 
-    _, coins, _, _ = user
+    _, coins, _, _, _, _, _ = user
 
     send_message(
         chat_id,
