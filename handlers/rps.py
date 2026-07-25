@@ -241,12 +241,11 @@ def handle(room, player, data):
 
         leave_room(player)
 
-        remove_keypad(
-            player,
-            "🚪 از بازی خارج شدی."
-        )
+        send_message(
+        player,
+        "🚪 از بازی خارج شدی."
+)
 
-        print("EXIT BUTTON DETECTED")
         room_menu(player)
 
         for p in other_players:
@@ -256,7 +255,7 @@ def handle(room, player, data):
                 "⚠️ حریف از بازی خارج شد."
             )
 
-            remove_keypad(
+            send_message(
                 p,
                 "🏁 بازی پایان یافت."
             )
