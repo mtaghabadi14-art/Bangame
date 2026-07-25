@@ -47,9 +47,7 @@ from handlers import (
     rps as rps_handler
 )
 
-from rooms.manager import (
-    get_player_room
-)
+from rooms.manager import get_player_room
 
 
 # ==========================================
@@ -73,6 +71,7 @@ def home():
     return {
         "status": "Bangame Online 🚀"
     }
+
 
 
 # ==========================================
@@ -146,13 +145,29 @@ async def receive_update(request: Request):
 
 
         # ==================================
+        # خروج از بازی آنلاین
+        # باید قبل از RPS و TTT باشد
+        # ==================================
+
+        if text == "🚪 خروج از بازی":
+
+            exit_room(chat_id)
+
+            return {
+                "ok": True
+            }
+
+
+
+        # ==================================
         # بازی‌های آنلاین
         # ==================================
 
         room = get_player_room(chat_id)
 
 
-        if room and text != "🚪 خروج از بازی":
+        if room:
+
 
             if room.game == "tictactoe":
 
@@ -167,6 +182,7 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
+
 
 
             if room.game == "rps":
@@ -361,18 +377,6 @@ async def receive_update(request: Request):
         ):
 
 
-            if text == "🚪 خروج از بازی":
-
-                guess_exit(
-                    states,
-                    chat_id
-                )
-
-                return {
-                    "ok": True
-                }
-
-
             guess_check(
                 states,
                 chat_id,
@@ -409,9 +413,16 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
+                # ==================================
+        # خروج از بازی‌های تک نفره
+        # ==================================
 
         elif text == "🚪 خروج از بازی":
+
+            guess_exit(
+                states,
+                chat_id
+            )
 
             dice_exit(
                 chat_id
@@ -420,8 +431,11 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-                # ==================================
-        # خروج از منو
+
+
+
+        # ==================================
+        # خروج
         # ==================================
 
         elif text == "🚪 خروج":
