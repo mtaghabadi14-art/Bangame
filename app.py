@@ -303,7 +303,7 @@ async def receive_update(request: Request):
         # برگشت‌ها
         # ==================================
 
-        elif text == "◀️ برگشت به منوی اصلی":
+        elif text == "◀️ برگشت":
 
             main_menu(chat_id)
 
@@ -313,7 +313,7 @@ async def receive_update(request: Request):
 
 
 
-        elif text == "◀️ برگشت به بازی‌ها":
+        elif text == "◀️ برگشت به منوی اصلی":
 
             games_menu(chat_id)
 
