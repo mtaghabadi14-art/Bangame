@@ -5,13 +5,16 @@ from rubika import (
     send_message
 )
 
-from database import add_coins
+from database import (
+    add_coins,
+    update_typing_stats
+)
+
 from level import give_xp
 
 
 games = {}
 
-# کاربرهایی که هنوز سطح انتخاب نکرده‌اند
 waiting_level = set()
 
 
@@ -48,7 +51,7 @@ def start(chat_id):
 
 
 # ==========================================
-# شروع بازی با سطح مشخص
+# شروع بازی
 # ==========================================
 
 def select_level(chat_id, level):
@@ -83,7 +86,7 @@ def select_level(chat_id, level):
 
 
 # ==========================================
-# بررسی پیام
+# بررسی جواب
 # ==========================================
 
 def check(chat_id, text):
@@ -158,32 +161,24 @@ def check(chat_id, text):
 
     # جواب اشتباه
 
-    if not check_answer(
-        game,
-        text
-    ):
-
+    if not check_answer(game, text):
 
         send_message(
-
             chat_id,
-
             "❌ جمله اشتباه است.\n"
             "دوباره تلاش کن."
         )
-
 
         return
 
 
 
-    # زمان پایان
+    # محاسبه زمان
 
     elapsed = round(
         time.time() - game["start_time"],
         2
     )
-
 
 
     sentence = game["sentence"]
@@ -208,15 +203,15 @@ def check(chat_id, text):
 
 
 
-    # پاداش
+    # جایزه سطح
 
     level_bonus = {
 
         "easy": 1,
 
-        "medium": 2,
+        "medium": 3,
 
-        "hard": 4
+        "hard": 5
 
     }
 
@@ -225,6 +220,7 @@ def check(chat_id, text):
         game.get("level"),
         1
     )
+
 
 
     coins = 5 + bonus + (wpm // 10)
@@ -245,20 +241,29 @@ def check(chat_id, text):
     )
 
 
+    # ذخیره رکورد
+
+    update_typing_stats(
+        chat_id,
+        elapsed,
+        wpm
+    )
+
+
 
     send_message(
-
         chat_id,
 
         "🎉 آفرین!\n\n"
 
         f"⭐ سطح: {game.get('level')}\n"
         f"⏱ زمان: {elapsed} ثانیه\n"
-        f"⌨️ سرعت: {wpm} کلمه در دقیقه\n\n"
+        f"⌨️ سرعت: {wpm} WPM\n\n"
 
         f"🪙 +{coins} سکه\n"
-        f"⭐ +{xp} XP"
+        f"⭐ +{xp} XP\n\n"
 
+        "🏆 رکوردت ذخیره شد!"
     )
 
 
