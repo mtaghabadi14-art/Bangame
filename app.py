@@ -7,6 +7,7 @@ from rubika import send_message
 
 from database import (
     create_tables,
+    add_typing_columns,
     add_user,
     get_user
 )
@@ -58,6 +59,7 @@ print("########## APP.PY LOADED ##########")
 app = FastAPI()
 
 create_tables()
+add_typing_columns()
 
 states = {}
 
