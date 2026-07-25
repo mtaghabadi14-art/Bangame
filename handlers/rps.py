@@ -19,7 +19,6 @@ from rooms.manager import (
 from handlers.menu import room_menu
 
 
-
 # ==========================================
 # شروع بازی
 # ==========================================
@@ -27,9 +26,7 @@ from handlers.menu import room_menu
 def start(room):
 
     room.started = True
-
     room.data["moves"] = {}
-
 
     for player in room.players:
 
@@ -62,7 +59,6 @@ def start(room):
         )
 
 
-
 # ==========================================
 # انتخاب بازیکن
 # ==========================================
@@ -71,18 +67,13 @@ def choose(player, choice):
 
     room = get_player_room(player)
 
-
     if room is None:
         return
-
 
     if room.game != "rps":
         return
 
-
-
     room.data["moves"][player] = choice
-
 
     send_message(
         player,
@@ -90,11 +81,8 @@ def choose(player, choice):
         "⏳ منتظر انتخاب حریف..."
     )
 
-
     if len(room.data["moves"]) < len(room.players):
-
         return
-
 
     finish(room)
     # ==========================================
@@ -108,16 +96,13 @@ def finish(room):
     p1 = players[0]
     p2 = players[1]
 
-
     move1 = room.data["moves"][p1]
     move2 = room.data["moves"][p2]
-
 
     result = rps.play(
         move1,
         move2
     )
-
 
     print("========== RPS DEBUG ==========")
     print("P1:", p1, move1)
@@ -126,16 +111,14 @@ def finish(room):
     print("===============================")
 
 
-
-    # ------------------------------
+    # --------------------------------------
     # مساوی
-    # ------------------------------
+    # --------------------------------------
 
     if result == "draw":
 
         give_xp(p1, 1)
         give_xp(p2, 1)
-
 
         text = (
             "🤝 مساوی شد!\n\n"
@@ -144,43 +127,21 @@ def finish(room):
             "⭐ +1 XP"
         )
 
-
-        send_message(
-            p1,
-            text
-        )
-
-        send_message(
-            p2,
-            text
-        )
+        send_message(p1, text)
+        send_message(p2, text)
 
 
-
-    # ------------------------------
+    # --------------------------------------
     # بازیکن اول برنده
-    # ------------------------------
+    # --------------------------------------
 
     elif result == "player1":
 
+        add_coins(p1, 5)
 
-        add_coins(
-            p1,
-            5
-        )
+        level = give_xp(p1, 2)
 
-
-        level = give_xp(
-            p1,
-            2
-        )
-
-
-        give_xp(
-            p2,
-            1
-        )
-
+        give_xp(p2, 1)
 
         text1 = (
             "🏆 تو بردی!\n\n"
@@ -189,7 +150,6 @@ def finish(room):
             "🪙 +5 سکه\n"
             "⭐ +2 XP"
         )
-
 
         if level["level_up"]:
 
@@ -199,7 +159,6 @@ def finish(room):
                 f"\n🪙 +{level['reward']} سکه"
             )
 
-
         text2 = (
             "😢 باختی!\n\n"
             f"👤 انتخاب تو: {move2}\n"
@@ -207,43 +166,19 @@ def finish(room):
             "⭐ +1 XP"
         )
 
-
-        send_message(
-            p1,
-            text1
-        )
-
-        send_message(
-            p2,
-            text2
-        )
-
-
-
-    # ------------------------------
+        send_message(p1, text1)
+        send_message(p2, text2)
+            # --------------------------------------
     # بازیکن دوم برنده
-    # ------------------------------
+    # --------------------------------------
 
     else:
 
+        add_coins(p2, 5)
 
-        add_coins(
-            p2,
-            5
-        )
+        level = give_xp(p2, 2)
 
-
-        level = give_xp(
-            p2,
-            2
-        )
-
-
-        give_xp(
-            p1,
-            1
-        )
-
+        give_xp(p1, 1)
 
         text2 = (
             "🏆 تو بردی!\n\n"
@@ -253,7 +188,6 @@ def finish(room):
             "⭐ +2 XP"
         )
 
-
         if level["level_up"]:
 
             text2 += (
@@ -262,7 +196,6 @@ def finish(room):
                 f"\n🪙 +{level['reward']} سکه"
             )
 
-
         text1 = (
             "😢 باختی!\n\n"
             f"👤 انتخاب تو: {move1}\n"
@@ -270,113 +203,81 @@ def finish(room):
             "⭐ +1 XP"
         )
 
-
-        send_message(
-            p1,
-            text1
-        )
-
-        send_message(
-            p2,
-            text2
-        )
-
-
+        send_message(p1, text1)
+        send_message(p2, text2)
 
     room.started = False
 
     room.data["moves"] = {}
 
-
     delete_room(
         room.room_id
     )
-    # ==========================================
-# مدیریت کلیک‌ها
+# ==========================================
+# مدیریت دکمه‌ها
 # ==========================================
 
 def handle(room, player, data):
+    def handle(room, player, data):
+
+     print("========== RPS HANDLE ==========")
+    print(data)
 
     button_id = data.get("button_id")
-
 
     if not button_id:
         return
 
-
-
-    # -------------------------
+    # --------------------------------------
     # خروج از بازی
-    # -------------------------
+    # --------------------------------------
 
     if button_id == "exit":
-
 
         other_players = [
             p for p in room.players
             if p != player
         ]
 
-
         leave_room(player)
-
 
         remove_keypad(
             player,
             "🚪 از بازی خارج شدی."
         )
 
-
-        # برگشت به اتاق بازی
+        print("EXIT BUTTON DETECTED")
         room_menu(player)
 
-
-
         for p in other_players:
-
 
             send_message(
                 p,
                 "⚠️ حریف از بازی خارج شد."
             )
 
-
             remove_keypad(
                 p,
                 "🏁 بازی پایان یافت."
             )
 
-
-            # برگشت حریف به اتاق بازی
-            room_menu(p)
-
-
             leave_room(p)
 
-
+            room_menu(p)
 
         return
 
-
-
-    # -------------------------
+    # --------------------------------------
     # انتخاب‌ها
-    # -------------------------
+    # --------------------------------------
 
     choices = {
-
         "rock": "🪨 سنگ",
-
         "paper": "📄 کاغذ",
-
         "scissors": "✂️ قیچی"
-
     }
 
-
-
     if button_id in choices:
-
 
         choose(
             player,
