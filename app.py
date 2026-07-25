@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Request
 import time
 
-from handlers import leaderboard
-
-from handlers import typing as typing_handler
-
 from rubika import send_message
+
+# ==============================
+# Database
+# ==============================
 
 from database import (
     create_tables,
@@ -14,16 +14,37 @@ from database import (
     get_user
 )
 
+# ==============================
+# Menus
+# ==============================
+
 from handlers.menu import (
     main_menu,
     games_menu
 )
+
+# ==============================
+# Profile
+# ==============================
 
 from handlers.profile import (
     show_profile,
     show_wallet,
     daily
 )
+
+# ==============================
+# Leaderboard
+# ==============================
+
+from handlers import leaderboard
+
+# ==============================
+# Offline Games
+# ==============================
+
+from handlers import typing as typing_handler
+from handlers import math_game
 
 from handlers.guess import (
     start as guess_start,
@@ -36,6 +57,10 @@ from handlers.dice import (
     roll as dice_roll,
     exit as dice_exit
 )
+
+# ==============================
+# Online Rooms
+# ==============================
 
 from handlers.rooms import (
     open_room_menu,
@@ -52,11 +77,11 @@ from handlers import (
     rps as rps_handler
 )
 
-from rooms.manager import get_player_room
-
+from rooms.manager import (
+    get_player_room
+)
 
 print("########## APP.PY LOADED ##########")
-
 
 app = FastAPI()
 
@@ -65,7 +90,9 @@ add_typing_columns()
 
 states = {}
 
-
+# ==============================
+# Home
+# ==============================
 
 @app.get("/")
 def home():
@@ -75,6 +102,9 @@ def home():
     }
 
 
+# ==============================
+# Webhook
+# ==============================
 
 @app.post("/receiveUpdate")
 async def receive_update(request: Request):
@@ -89,12 +119,10 @@ async def receive_update(request: Request):
         print(data)
         print("============================\n")
 
-
         update = data.get(
             "update",
             {}
         )
-
 
         if update.get("type") != "NewMessage":
 
@@ -102,34 +130,29 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         chat_id = update["chat_id"]
-
         msg = update["new_message"]
-
 
         text = msg.get(
             "text",
             ""
         ).strip()
 
-
         button_id = (
             msg.get("aux_data", {})
             .get("button_id")
         )
 
-
         print("TEXT:", text)
         print("BUTTON_ID:", button_id)
 
-
+        # ==============================
+        # ساخت کاربر
+        # ==============================
 
         if not get_user(chat_id):
 
             add_user(chat_id)
-
-
 
         # ==============================
         # ورود به اتاق
@@ -144,17 +167,13 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
-
         # ==============================
-        # بازی های آنلاین
+        # بازی‌های آنلاین
         # ==============================
 
         room = get_player_room(chat_id)
 
-
         if room:
-
 
             if room.game == "tictactoe":
 
@@ -170,9 +189,7 @@ async def receive_update(request: Request):
                     "ok": True
                 }
 
-
-
-            if room.game == "rps":
+            elif room.game == "rps":
 
                 rps_handler.handle(
                     room,
@@ -185,8 +202,6 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
-
-
 
         # ==============================
         # /start
@@ -204,6 +219,10 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
+        # ==============================
+        # از اینجا بخش ۲ شروع می‌شود...
+        # ==============================
                 # ==============================
         # منوی اصلی
         # ==============================
@@ -243,6 +262,18 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+
+        # ==============================
+        # لیدربورد
+        # ==============================
+
+        elif text == "🏆 لیدربورد سرعت تایپ":
+
+            leaderboard.typing(chat_id)
+
+            return {
+                "ok": True
+            }
 
 
         # ==============================
@@ -285,9 +316,8 @@ async def receive_update(request: Request):
             }
 
 
-
         # ==============================
-        # برگشت‌ها
+        # برگشت
         # ==============================
 
         elif text == "برگشت":
@@ -317,9 +347,8 @@ async def receive_update(request: Request):
             }
 
 
-
         # ==============================
-        # ساخت بازی آنلاین
+        # ساخت اتاق بازی
         # ==============================
 
         elif text == "✂️ سنگ کاغذ قیچی":
@@ -339,33 +368,16 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
-
-        
         # ==============================
+        # از اینجا بخش ۳ شروع می‌شود...
+        # ==============================
+                # ==============================
         # بازی سرعت تایپ
         # ==============================
 
         elif text == "⌨️ سرعت تایپ":
 
-            typing_handler.start(
-                chat_id
-            )
-
-            return {
-                "ok": True
-            }
-
-
-        # ==============================
-        # لیدربورد سرعت تایپ
-        # ==============================
-
-        elif text == "🏆 لیدربورد سرعت تایپ":
-
-            leaderboard.typing(
-                chat_id
-            )
+            typing_handler.start(chat_id)
 
             return {
                 "ok": True
@@ -388,22 +400,31 @@ async def receive_update(request: Request):
 
 
         # ==============================
-        # بازی حدس عدد
+        # بازی محاسبات سریع
         # ==============================
 
-        elif text == "🔢 حدس عدد":
+        elif text == "⚡ محاسبات سریع":
 
-            guess_start(
-                states,
-                chat_id
-            )
+            math_game.start(chat_id)
 
             return {
                 "ok": True
             }
 
 
+        elif (
+            chat_id in math_game.games
+            or chat_id in math_game.waiting_level
+        ):
 
+            math_game.check(
+                chat_id,
+                text
+            )
+
+            return {
+                "ok": True
+            }
 
 
         # ==============================
@@ -427,7 +448,6 @@ async def receive_update(request: Request):
             and states[chat_id].get("game") == "guess"
         ):
 
-
             if text == "🚪 خروج از بازی":
 
                 guess_exit(
@@ -438,7 +458,6 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
-
 
             guess_check(
                 states,
@@ -451,16 +470,13 @@ async def receive_update(request: Request):
             }
 
 
-
         # ==============================
         # بازی تاس
         # ==============================
 
         elif text == "🎲 تاس":
 
-            dice_start(
-                chat_id
-            )
+            dice_start(chat_id)
 
             return {
                 "ok": True
@@ -469,9 +485,7 @@ async def receive_update(request: Request):
 
         elif text == "🎲 ریختن تاس":
 
-            dice_roll(
-                chat_id
-            )
+            dice_roll(chat_id)
 
             return {
                 "ok": True
@@ -480,13 +494,15 @@ async def receive_update(request: Request):
 
         elif text == "🚪 خروج از بازی":
 
-            dice_exit(
-                chat_id
-            )
+            dice_exit(chat_id)
 
             return {
                 "ok": True
             }
+
+        # ==============================
+        # از اینجا بخش ۴ شروع می‌شود...
+        # ==============================
                 # ==============================
         # خروج از منو
         # ==============================
@@ -498,7 +514,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
 
 
         # ==============================
@@ -513,13 +528,11 @@ async def receive_update(request: Request):
             )
 
 
-
     except Exception as e:
 
         print("================================")
         print("ERROR:", e)
         print("================================")
-
 
         try:
 
@@ -529,24 +542,18 @@ async def receive_update(request: Request):
             )
 
         except Exception:
-
             pass
 
-
-
     end_time = time.time()
-
 
     print(
         f"⚡ Process Time: "
         f"{round(end_time - start_time, 3)} sec"
     )
 
-
     return {
         "ok": True
     }
-
 
 
 # ==========================================
@@ -556,7 +563,6 @@ async def receive_update(request: Request):
 if __name__ == "__main__":
 
     import uvicorn
-
 
     uvicorn.run(
         "app:app",
