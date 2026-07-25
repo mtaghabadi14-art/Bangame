@@ -203,6 +203,7 @@ def finish(room):
 def handle(room, player, data):
 
     button_id = data.get("button_id")
+    print("RPS BUTTON:", button_id)
 
     if not button_id:
         return
@@ -211,7 +212,7 @@ def handle(room, player, data):
     # خروج از بازی
     # -------------------------
 
-    if button_id == "exit":
+    if button_id == "exit" or button_id == "🚪 خروج از بازی":
 
         other_players = [
             p for p in room.players

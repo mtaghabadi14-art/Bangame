@@ -73,7 +73,6 @@ def home():
     }
 
 
-
 # ==========================================
 # Webhook
 # ==========================================
@@ -137,21 +136,6 @@ async def receive_update(request: Request):
             chat_id,
             text
         ):
-
-            return {
-                "ok": True
-            }
-
-
-
-        # ==================================
-        # خروج از بازی آنلاین
-        # باید قبل از RPS و TTT باشد
-        # ==================================
-
-        if text == "🚪 خروج از بازی":
-
-            exit_room(chat_id)
 
             return {
                 "ok": True
@@ -233,6 +217,7 @@ async def receive_update(request: Request):
             }
 
 
+
         elif text == "👤 پروفایل":
 
             show_profile(chat_id)
@@ -242,6 +227,7 @@ async def receive_update(request: Request):
             }
 
 
+
         elif text == "🪙 کیف پول":
 
             show_wallet(chat_id)
@@ -249,6 +235,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
 
 
         elif text == "🎁 جایزه روزانه":
@@ -274,6 +261,7 @@ async def receive_update(request: Request):
             }
 
 
+
         elif text == "➕ ساخت اتاق":
 
             open_create_room(chat_id)
@@ -283,6 +271,7 @@ async def receive_update(request: Request):
             }
 
 
+
         elif text == "🚪 ورود به اتاق":
 
             request_join(chat_id)
@@ -290,6 +279,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
 
 
         elif text == "🚪 خروج از اتاق":
@@ -344,6 +334,7 @@ async def receive_update(request: Request):
             }
 
 
+
         elif text == "⭕ دوز":
 
             create_tictactoe_room(chat_id)
@@ -377,6 +368,18 @@ async def receive_update(request: Request):
         ):
 
 
+            if text == "🚪 خروج از بازی":
+
+                guess_exit(
+                    states,
+                    chat_id
+                )
+
+                return {
+                    "ok": True
+                }
+
+
             guess_check(
                 states,
                 chat_id,
@@ -404,6 +407,7 @@ async def receive_update(request: Request):
             }
 
 
+
         elif text == "🎲 ریختن تاس":
 
             dice_roll(
@@ -413,16 +417,10 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-                # ==================================
-        # خروج از بازی‌های تک نفره
-        # ==================================
+
+
 
         elif text == "🚪 خروج از بازی":
-
-            guess_exit(
-                states,
-                chat_id
-            )
 
             dice_exit(
                 chat_id
@@ -431,11 +429,8 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-
-
-        # ==================================
-        # خروج
+                # ==================================
+        # خروج از منو
         # ==================================
 
         elif text == "🚪 خروج":
