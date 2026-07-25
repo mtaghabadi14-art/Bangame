@@ -16,7 +16,12 @@ from rooms.manager import (
 )
 
 
+# ==========================================
+# انتظار کد اتاق
+# ==========================================
+
 waiting_for_room_code = set()
+
 
 
 # ==========================================
@@ -28,9 +33,11 @@ def open_room_menu(chat_id):
     room_menu(chat_id)
 
 
+
 def open_create_room(chat_id):
 
     create_room_menu(chat_id)
+
 
 
 # ==========================================
@@ -46,6 +53,7 @@ def create_rps_room(chat_id):
         max_players=2
     )
 
+
     if room is None:
 
         send_message(
@@ -56,6 +64,7 @@ def create_rps_room(chat_id):
         return
 
 
+
     send_message(
         chat_id,
         f"✅ اتاق سنگ کاغذ قیچی ساخته شد.\n\n"
@@ -63,6 +72,7 @@ def create_rps_room(chat_id):
         f"👥 1 / 2 بازیکن\n\n"
         f"⏳ منتظر بازیکن دوم..."
     )
+
 
 
 # ==========================================
@@ -78,6 +88,7 @@ def create_tictactoe_room(chat_id):
         max_players=2
     )
 
+
     if room is None:
 
         send_message(
@@ -86,8 +97,7 @@ def create_tictactoe_room(chat_id):
         )
 
         return
-
-
+        id="m7z8qe"
     send_message(
         chat_id,
         f"⭕ اتاق دوز ساخته شد.\n\n"
@@ -97,8 +107,9 @@ def create_tictactoe_room(chat_id):
     )
 
 
+
 # ==========================================
-# درخواست ورود
+# درخواست ورود به اتاق
 # ==========================================
 
 def request_join(chat_id):
@@ -111,24 +122,42 @@ def request_join(chat_id):
     )
 
 
+
 # ==========================================
-# ورود به اتاق
+# دریافت کد اتاق
 # ==========================================
 
 def receive_room_code(chat_id, code):
+
+    # اگر کاربر برگشت زد، از حالت انتظار خارج شود
+
+    if code in [
+        "⬅️ برگشت",
+        "⬅️ برگشت به منوی اصلی",
+        "⬅️ برگشت به اتاق بازی"
+    ]:
+
+        waiting_for_room_code.discard(chat_id)
+
+        return False
+
+
 
     if chat_id not in waiting_for_room_code:
 
         return False
 
 
+
     waiting_for_room_code.remove(chat_id)
+
 
 
     room = join_room(
         code,
         chat_id
     )
+
 
 
     if room is None:
@@ -139,6 +168,7 @@ def receive_room_code(chat_id, code):
         )
 
         return True
+
 
 
     # اطلاع به بازیکنان
@@ -152,6 +182,7 @@ def receive_room_code(chat_id, code):
         )
 
 
+
     # شروع بازی
 
     if room.game == "tictactoe":
@@ -163,7 +194,9 @@ def receive_room_code(chat_id, code):
                 "🔥 بازی دوز شروع شد!"
             )
 
+
         tictactoe.start(room)
+
 
 
     elif room.game == "rps":
@@ -175,13 +208,12 @@ def receive_room_code(chat_id, code):
                 "✂️ بازی سنگ کاغذ قیچی شروع شد!"
             )
 
+
         rps.start(room)
 
 
+
     return True
-
-
-
 # ==========================================
 # خروج از اتاق
 # ==========================================
@@ -189,6 +221,7 @@ def receive_room_code(chat_id, code):
 def exit_room(chat_id):
 
     room = get_player_room(chat_id)
+
 
     if room is None:
 
@@ -200,14 +233,16 @@ def exit_room(chat_id):
         return
 
 
-    # بازیکنان باقی‌مانده را قبل از خروج ذخیره کن
+
     other_players = [
         p for p in room.players
         if p != chat_id
     ]
 
 
+
     leave_room(chat_id)
+
 
 
     send_message(
@@ -216,23 +251,10 @@ def exit_room(chat_id):
     )
 
 
+
     for player in other_players:
 
         send_message(
             player,
             "⚠️ یکی از بازیکنان از اتاق خارج شد."
         )
-            # اگر میزبان خارج شد، همه برمی‌گردند به منوی بازی‌ها
-    if len(other_players) > 0:
-
-        from handlers.menu import games_menu
-        from rubika import remove_keypad
-
-        for player in other_players:
-
-            remove_keypad(
-                player,
-                "🏁 بازی پایان یافت."
-            )
-
-            games_menu(player)
