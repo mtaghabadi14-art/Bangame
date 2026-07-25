@@ -3,7 +3,6 @@ import sqlite3
 DB_NAME = "bangame.db"
 
 
-
 # ==========================================
 # اتصال دیتابیس
 # ==========================================
@@ -11,7 +10,6 @@ DB_NAME = "bangame.db"
 def connect():
 
     return sqlite3.connect(DB_NAME)
-
 
 
 # ==========================================
@@ -23,7 +21,6 @@ def create_tables():
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
@@ -45,15 +42,13 @@ def create_tables():
     )
     """)
 
-
     conn.commit()
 
     conn.close()
 
 
-
 # ==========================================
-# اضافه کردن ستون‌های جدید به دیتابیس قدیمی
+# اضافه کردن ستون‌های جدید
 # ==========================================
 
 def add_typing_columns():
@@ -62,26 +57,15 @@ def add_typing_columns():
 
     cur = conn.cursor()
 
-
     columns = [
 
-        (
-            "typing_games",
-            "INTEGER DEFAULT 0"
-        ),
+        ("typing_games", "INTEGER DEFAULT 0"),
 
-        (
-            "typing_best_time",
-            "REAL DEFAULT 0"
-        ),
+        ("typing_best_time", "REAL DEFAULT 0"),
 
-        (
-            "typing_best_wpm",
-            "REAL DEFAULT 0"
-        )
+        ("typing_best_wpm", "REAL DEFAULT 0")
 
     ]
-
 
     for name, dtype in columns:
 
@@ -98,12 +82,9 @@ def add_typing_columns():
 
             pass
 
-
-
     conn.commit()
 
     conn.close()
-
 
 
 # ==========================================
@@ -116,7 +97,6 @@ def add_user(user_id):
 
     cur = conn.cursor()
 
-
     cur.execute(
         """
         INSERT OR IGNORE INTO users(user_id)
@@ -125,11 +105,9 @@ def add_user(user_id):
         (user_id,)
     )
 
-
     conn.commit()
 
     conn.close()
-
 
 
 # ==========================================
@@ -142,7 +120,6 @@ def get_user(user_id):
 
     cur = conn.cursor()
 
-
     cur.execute(
         """
         SELECT *
@@ -152,16 +129,11 @@ def get_user(user_id):
         (user_id,)
     )
 
-
     user = cur.fetchone()
-
 
     conn.close()
 
     return user
-
-
-
 # ==========================================
 # سکه
 # ==========================================
@@ -171,7 +143,6 @@ def add_coins(user_id, amount):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -185,11 +156,9 @@ def add_coins(user_id, amount):
         )
     )
 
-
     conn.commit()
 
     conn.close()
-
 
 
 # ==========================================
@@ -201,7 +170,6 @@ def add_xp(user_id, amount):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -215,15 +183,13 @@ def add_xp(user_id, amount):
         )
     )
 
-
     conn.commit()
 
     conn.close()
 
 
-
 # ==========================================
-# Level
+# تغییر Level
 # ==========================================
 
 def set_level(user_id, level):
@@ -231,7 +197,6 @@ def set_level(user_id, level):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -245,15 +210,13 @@ def set_level(user_id, level):
         )
     )
 
-
     conn.commit()
 
     conn.close()
 
 
-
 # ==========================================
-# XP مستقیم
+# تغییر XP
 # ==========================================
 
 def set_xp(user_id, xp):
@@ -261,7 +224,6 @@ def set_xp(user_id, xp):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -275,14 +237,10 @@ def set_xp(user_id, xp):
         )
     )
 
-
     conn.commit()
 
     conn.close()
-
-
-
-# ==========================================
+    # ==========================================
 # آمار سرعت تایپ
 # ==========================================
 
@@ -296,8 +254,6 @@ def update_typing_stats(
 
     cur = conn.cursor()
 
-
-
     # افزایش تعداد بازی‌ها
 
     cur.execute(
@@ -309,13 +265,11 @@ def update_typing_stats(
         (user_id,)
     )
 
-
-
     # گرفتن رکورد قبلی
 
     cur.execute(
         """
-        SELECT 
+        SELECT
             typing_best_time,
             typing_best_wpm
         FROM users
@@ -324,16 +278,14 @@ def update_typing_stats(
         (user_id,)
     )
 
-
     data = cur.fetchone()
 
-
+    new_time_record = False
+    new_wpm_record = False
 
     if data:
 
         best_time, best_wpm = data
-
-
 
         # رکورد زمان
 
@@ -351,7 +303,7 @@ def update_typing_stats(
                 )
             )
 
-
+            new_time_record = True
 
         # رکورد سرعت
 
@@ -369,8 +321,42 @@ def update_typing_stats(
                 )
             )
 
-
+            new_wpm_record = True
 
     conn.commit()
 
     conn.close()
+
+    return {
+        "new_time_record": new_time_record,
+        "new_wpm_record": new_wpm_record
+    }
+
+
+# ==========================================
+# گرفتن آمار سرعت تایپ
+# ==========================================
+
+def get_typing_stats(user_id):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT
+            typing_games,
+            typing_best_time,
+            typing_best_wpm
+        FROM users
+        WHERE user_id=?
+        """,
+        (user_id,)
+    )
+
+    data = cur.fetchone()
+
+    conn.close()
+
+    return data
