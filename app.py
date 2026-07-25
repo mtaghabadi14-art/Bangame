@@ -48,6 +48,7 @@ from handlers import (
 )
 
 from rooms.manager import get_player_room
+print("########## APP.PY LOADED ##########")
 
 
 # ==========================================
