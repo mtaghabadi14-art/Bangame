@@ -152,7 +152,7 @@ async def receive_update(request: Request):
         room = get_player_room(chat_id)
 
 
-        if room:
+        if room and text != "🚪 خروج از بازی":
 
             if room.game == "tictactoe":
 
