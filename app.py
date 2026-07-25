@@ -110,9 +110,8 @@ async def receive_update(request: Request):
 
 
         text = (
-            msg.get("aux_data", {}).get("button_id")
-            or msg.get("text", "")
-        ).strip()
+         msg.get("text", "")
+         ).strip()
 
 
         button_id = (
