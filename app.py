@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
 import time
 
+from handlers import leaderboard
+
 from handlers import typing as typing_handler
 
 from rubika import send_message
@@ -339,6 +341,7 @@ async def receive_update(request: Request):
 
 
 
+        
         # ==============================
         # بازی سرعت تایپ
         # ==============================
@@ -346,6 +349,21 @@ async def receive_update(request: Request):
         elif text == "⌨️ سرعت تایپ":
 
             typing_handler.start(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
+        # ==============================
+        # لیدربورد سرعت تایپ
+        # ==============================
+
+        elif text == "🏆 لیدربورد سرعت تایپ":
+
+            leaderboard.typing(
                 chat_id
             )
 
@@ -367,6 +385,24 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
+
+        # ==============================
+        # بازی حدس عدد
+        # ==============================
+
+        elif text == "🔢 حدس عدد":
+
+            guess_start(
+                states,
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
 
 
 
