@@ -360,3 +360,32 @@ def get_typing_stats(user_id):
     conn.close()
 
     return data
+# ==========================================
+# لیدربورد سرعت تایپ
+# ==========================================
+
+def get_typing_leaderboard(limit=10):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT
+            user_id,
+            typing_best_wpm,
+            typing_best_time
+        FROM users
+        WHERE typing_games > 0
+        ORDER BY typing_best_wpm DESC
+        LIMIT ?
+        """,
+        (limit,)
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+
+    return data
