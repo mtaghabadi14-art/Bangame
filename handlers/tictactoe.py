@@ -10,7 +10,8 @@ from games import tictactoe
 
 from rooms.manager import (
     leave_room,
-    delete_room
+    delete_room,
+    get_player_room
 )
 
 
@@ -52,6 +53,7 @@ def board_buttons(board):
 
         buttons.append(line)
 
+
     buttons.append(
         [
             {
@@ -70,23 +72,24 @@ def board_buttons(board):
 
 def update(room):
 
+    if not room.started:
+        return
+
     keypad = board_buttons(
         room.data["board"]
     )
 
+
     for player in room.players:
 
-        if not room.started:
-
-            text = "🏁 بازی تمام شده است."
-
-        elif player == room.data["turn"]:
+        if player == room.data["turn"]:
 
             text = "🎮 نوبت تو است."
 
         else:
 
             text = "⏳ منتظر حرکت حریف..."
+
 
         send_keypad(
             player,
@@ -103,7 +106,7 @@ def end(room):
 
     room.started = False
 
-    update(room)
+    room.data.clear()
 
     delete_room(
         room.room_id
@@ -123,6 +126,7 @@ def move(room, player, button_id):
 
         return
 
+
     if room.data["turn"] != player:
 
         send_message(
@@ -132,14 +136,22 @@ def move(room, player, button_id):
 
         return
 
-    row, col = button_id.split("_")
 
-    row = int(row)
-    col = int(col)
+    try:
+
+        row, col = button_id.split("_")
+
+        row = int(row)
+        col = int(col)
+
+    except:
+
+        return
+
 
     board = room.data["board"]
 
-    # ثبت حرکت
+
     if not tictactoe.play(
         board,
         row,
@@ -153,10 +165,17 @@ def move(room, player, button_id):
 
         return
 
+
+
+    # -------------------------
     # بررسی برنده
+    # -------------------------
+
     win = tictactoe.winner(board)
 
+
     if win:
+
 
         winner_player = (
             room.players[0]
@@ -164,12 +183,14 @@ def move(room, player, button_id):
             else room.players[1]
         )
 
+
         for p in room.players:
 
             remove_keypad(
                 p,
                 "🏁 بازی تمام شد."
             )
+
 
             if p == winner_player:
 
@@ -182,37 +203,56 @@ def move(room, player, button_id):
 
                 send_message(
                     p,
-                    "😢 بازی تمام شد.\nحریفت برنده شد."
+                    "😢 حریفت برنده شد."
                 )
 
+
             games_menu(p)
+
+
 
         end(room)
 
         return
 
+
+
+    # -------------------------
     # بررسی مساوی
+    # -------------------------
+
     if tictactoe.draw(board):
 
+
         for p in room.players:
+
 
             remove_keypad(
                 p,
                 "🏁 بازی تمام شد."
             )
 
+
             send_message(
                 p,
                 "🤝 بازی مساوی شد."
             )
 
+
             games_menu(p)
+
+
 
         end(room)
 
         return
 
-    # تعویض نوبت
+
+
+    # -------------------------
+    # تغییر نوبت
+    # -------------------------
+
     if player == room.players[0]:
 
         room.data["turn"] = room.players[1]
@@ -221,17 +261,26 @@ def move(room, player, button_id):
 
         room.data["turn"] = room.players[0]
 
+
     update(room)
-    # ==========================================
-# مدیریت کلیک‌ها
+
+
+
+
+# ==========================================
+# مدیریت کلیک دکمه‌ها
 # ==========================================
 
 def handle(room, player, data):
 
     button_id = data.get("button_id")
 
+
     if not button_id:
+
         return
+
+
 
     # -------------------------
     # خروج از بازی
@@ -239,40 +288,71 @@ def handle(room, player, data):
 
     if button_id == "exit":
 
+
         other_players = [
             p for p in room.players
             if p != player
         ]
 
+
+        room.started = False
+
+        room.data.clear()
+
+
+
         leave_room(player)
+
 
         remove_keypad(
             player,
             "🚪 از بازی خارج شدی."
         )
 
+
+        send_message(
+            player,
+            "🚪 از دوز خارج شدی."
+        )
+
+
         games_menu(player)
 
+
+
         for p in other_players:
+
 
             send_message(
                 p,
                 "⚠️ حریف از بازی خارج شد."
             )
 
+
             remove_keypad(
                 p,
                 "🏁 بازی پایان یافت."
             )
 
+
             games_menu(p)
+
 
             leave_room(p)
 
+
+
+        delete_room(
+            room.room_id
+        )
+
+
         return
 
+
+
     # -------------------------
-    # حرکت
+    # حرکت دوز
     # -------------------------
 
     move(

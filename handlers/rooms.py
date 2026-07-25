@@ -190,7 +190,6 @@ def exit_room(chat_id):
 
     room = get_player_room(chat_id)
 
-
     if room is None:
 
         send_message(
@@ -199,6 +198,13 @@ def exit_room(chat_id):
         )
 
         return
+
+
+    # بازیکنان باقی‌مانده را قبل از خروج ذخیره کن
+    other_players = [
+        p for p in room.players
+        if p != chat_id
+    ]
 
 
     leave_room(chat_id)
@@ -210,15 +216,23 @@ def exit_room(chat_id):
     )
 
 
-    room = get_player_room(chat_id)
+    for player in other_players:
 
+        send_message(
+            player,
+            "⚠️ یکی از بازیکنان از اتاق خارج شد."
+        )
+            # اگر میزبان خارج شد، همه برمی‌گردند به منوی بازی‌ها
+    if len(other_players) > 0:
 
-    if room:
+        from handlers.menu import games_menu
+        from rubika import remove_keypad
 
-        for player in room.players:
+        for player in other_players:
 
-            send_message(
+            remove_keypad(
                 player,
-                "⚠️ یکی از بازیکنان از اتاق خارج شد."
+                "🏁 بازی پایان یافت."
             )
-            
+
+            games_menu(player)
