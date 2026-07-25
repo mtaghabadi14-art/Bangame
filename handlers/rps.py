@@ -16,7 +16,7 @@ from rooms.manager import (
     delete_room
 )
 
-from handlers.rooms import open_room_menu
+from handlers.menu import room_menu
 
 
 
@@ -328,7 +328,7 @@ def handle(room, player, data):
 
 
         # برگشت به اتاق بازی
-        open_room_menu(player)
+        room_menu(player)
 
 
 
@@ -348,7 +348,7 @@ def handle(room, player, data):
 
 
             # برگشت حریف به اتاق بازی
-            open_room_menu(p)
+            room_menu(p)
 
 
             leave_room(p)
@@ -382,4 +382,3 @@ def handle(room, player, data):
             player,
             choices[button_id]
         )
-        
