@@ -62,12 +62,14 @@ create_tables()
 states = {}
 
 
+
 @app.get("/")
 def home():
 
     return {
         "status": "Bangame Online 🚀"
     }
+
 
 
 @app.post("/receiveUpdate")
@@ -118,9 +120,11 @@ async def receive_update(request: Request):
         print("BUTTON_ID:", button_id)
 
 
+
         if not get_user(chat_id):
 
             add_user(chat_id)
+
 
 
         # ==============================
@@ -137,6 +141,7 @@ async def receive_update(request: Request):
             }
 
 
+
         # ==============================
         # بازی های آنلاین
         # ==============================
@@ -145,6 +150,7 @@ async def receive_update(request: Request):
 
 
         if room:
+
 
             if room.game == "tictactoe":
 
@@ -161,6 +167,7 @@ async def receive_update(request: Request):
                 }
 
 
+
             if room.game == "rps":
 
                 rps_handler.handle(
@@ -174,6 +181,7 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
+
 
 
         # ==============================
@@ -192,9 +200,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-
-        # ==============================
+                # ==============================
         # منوی اصلی
         # ==============================
 
@@ -223,6 +229,8 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
+
         elif text == "🎁 جایزه روزانه":
 
             daily(chat_id)
@@ -230,6 +238,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
 
 
         # ==============================
@@ -343,7 +352,10 @@ async def receive_update(request: Request):
             }
 
 
-        elif chat_id in typing_handler.games:
+        elif (
+            chat_id in typing_handler.games
+            or chat_id in typing_handler.waiting_level
+        ):
 
             typing_handler.check(
                 chat_id,

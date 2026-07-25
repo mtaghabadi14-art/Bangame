@@ -8,22 +8,62 @@ from rubika import (
 from database import add_coins
 from level import give_xp
 
+
 games = {}
+
+# کاربرهایی که هنوز سطح انتخاب نکرده‌اند
+waiting_level = set()
+
 
 
 # ==========================================
-# شروع بازی
+# شروع انتخاب سطح
 # ==========================================
 
 def start(chat_id):
 
+    waiting_level.add(chat_id)
+
+
+    send_keypad(
+        chat_id,
+
+        "⌨️ سرعت تایپ\n\n"
+        "سطح بازی را انتخاب کن:",
+
+        [
+            [
+                "🟢 آسان",
+                "🟡 متوسط"
+            ],
+            [
+                "🔴 سخت"
+            ],
+            [
+                "🚪 خروج از بازی"
+            ]
+        ]
+    )
+
+
+
+# ==========================================
+# شروع بازی با سطح مشخص
+# ==========================================
+
+def select_level(chat_id, level):
+
     from games.typing import create_game
 
-    game = create_game()
+
+    game = create_game(level)
+
 
     game["start_time"] = time.time()
 
+
     games[chat_id] = game
+
 
 
     send_keypad(
@@ -43,19 +83,67 @@ def start(chat_id):
 
 
 # ==========================================
-# بررسی پاسخ
+# بررسی پیام
 # ==========================================
 
 def check(chat_id, text):
 
-    if chat_id not in games:
+
+    # انتخاب سطح
+
+    if chat_id in waiting_level:
+
+
+        if text == "🟢 آسان":
+
+            waiting_level.remove(chat_id)
+
+            select_level(
+                chat_id,
+                "easy"
+            )
+
+
+        elif text == "🟡 متوسط":
+
+            waiting_level.remove(chat_id)
+
+            select_level(
+                chat_id,
+                "medium"
+            )
+
+
+        elif text == "🔴 سخت":
+
+            waiting_level.remove(chat_id)
+
+            select_level(
+                chat_id,
+                "hard"
+            )
+
+
+        elif text == "🚪 خروج از بازی":
+
+            exit(chat_id)
+
+
         return
+
+
+
+    if chat_id not in games:
+
+        return
+
 
 
     from games.typing import check as check_answer
 
 
     game = games[chat_id]
+
 
 
     # خروج
@@ -68,22 +156,28 @@ def check(chat_id, text):
 
 
 
-    # بررسی جمله
+    # جواب اشتباه
 
-    if not check_answer(game, text):
+    if not check_answer(
+        game,
+        text
+    ):
+
 
         send_message(
+
             chat_id,
 
-            "❌ اشتباه بود!\n\n"
+            "❌ جمله اشتباه است.\n"
             "دوباره تلاش کن."
         )
+
 
         return
 
 
 
-    # زمان
+    # زمان پایان
 
     elapsed = round(
         time.time() - game["start_time"],
@@ -91,14 +185,15 @@ def check(chat_id, text):
     )
 
 
+
     sentence = game["sentence"]
 
 
-    # محاسبه سرعت تایپ
-
     chars = len(sentence)
 
+
     minutes = elapsed / 60
+
 
 
     if minutes > 0:
@@ -113,17 +208,28 @@ def check(chat_id, text):
 
 
 
-    # امتیاز
+    # پاداش
 
-    score = max(
-        5,
-        wpm // 5
+    level_bonus = {
+
+        "easy": 1,
+
+        "medium": 2,
+
+        "hard": 4
+
+    }
+
+
+    bonus = level_bonus.get(
+        game.get("level"),
+        1
     )
 
 
-    coins = score + 5
+    coins = 5 + bonus + (wpm // 10)
 
-    xp = score
+    xp = 3 + bonus
 
 
 
@@ -144,16 +250,17 @@ def check(chat_id, text):
 
         chat_id,
 
-        "🎉 عالی بود!\n\n"
+        "🎉 آفرین!\n\n"
 
+        f"⭐ سطح: {game.get('level')}\n"
         f"⏱ زمان: {elapsed} ثانیه\n"
-        f"⌨️ سرعت: {wpm} کلمه در دقیقه\n"
-        f"🏆 امتیاز: {score}\n\n"
+        f"⌨️ سرعت: {wpm} کلمه در دقیقه\n\n"
 
         f"🪙 +{coins} سکه\n"
         f"⭐ +{xp} XP"
 
     )
+
 
 
     games.pop(
@@ -178,9 +285,13 @@ def exit(chat_id):
     )
 
 
+    waiting_level.discard(
+        chat_id
+    )
+
+
     send_message(
         chat_id,
-
         "🚪 از بازی سرعت تایپ خارج شدی."
     )
 
