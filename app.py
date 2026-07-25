@@ -170,7 +170,10 @@ async def receive_update(request: Request):
 
 
             if room.game == "rps":
-
+ 
+                print(">>>> CALLING RPS HANDLE <<<<")
+                print(room.game)
+                print(button_id)
                 rps_handler.handle(
                     room,
                     chat_id,

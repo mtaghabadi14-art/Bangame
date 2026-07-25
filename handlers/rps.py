@@ -221,6 +221,7 @@ def finish(room):
 def handle(room, player, data):
     def handle(room, player, data):
 
+     print(">>>> INSIDE RPS HANDLE <<<<")
      print("########## HANDLERS/RPS.PY ##########")
     print("BUTTON:", data.get("button_id"))
 
