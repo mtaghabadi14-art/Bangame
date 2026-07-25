@@ -128,6 +128,8 @@ async def receive_update(request: Request):
             msg.get("aux_data", {})
             .get("button_id")
         )
+        print("TEXT:", text)
+        print("BUTTON_ID:", button_id)
 
 
         if not get_user(chat_id):
