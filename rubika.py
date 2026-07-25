@@ -187,7 +187,22 @@ def update_bot_endpoint(url):
             "type": "ReceiveUpdate"
         }
     )
+# ==========================================
+# Delete Message
+# ==========================================
 
+def delete_message(
+    chat_id,
+    message_id
+):
+
+    return call_api(
+        "deleteMessage",
+        {
+            "chat_id": chat_id,
+            "message_id": message_id
+        }
+    )
 
 # ==========================================
 # پایان فایل

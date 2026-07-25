@@ -2,7 +2,8 @@ import time
 
 from rubika import (
     send_keypad,
-    send_message
+    send_message,
+    delete_message
 )
 
 from database import add_coins
@@ -28,7 +29,7 @@ def start(chat_id):
         chat_id,
 
         "🧠 بازی حافظه\n\n"
-        "سطح را انتخاب کن:",
+        "سطح بازی را انتخاب کن:",
 
         [
             [
@@ -57,12 +58,9 @@ def select_level(chat_id, level):
 
     game = create_game(level)
 
-
     game["start_time"] = time.time()
 
-
     games[chat_id] = game
-
 
 
     sequence = " ".join(
@@ -70,7 +68,8 @@ def select_level(chat_id, level):
     )
 
 
-    send_message(
+    result = send_message(
+
         chat_id,
 
         "🧠 حافظه را به خاطر بسپار!\n\n"
@@ -79,31 +78,20 @@ def select_level(chat_id, level):
     )
 
 
-    time.sleep(5)
-
-
-    send_keypad(
-        chat_id,
-
-        "✅ حالا دنباله را وارد کن:",
-
-        [
-            [
-                "🚪 خروج از بازی"
-            ]
-        ]
+    print(
+        "MEMORY RESULT:",
+        result
     )
-
-
-
-# ==========================================
-# بررسی جواب
+    # ==========================================
+# بررسی انتخاب سطح و جواب
 # ==========================================
 
 def check(chat_id, text):
 
 
+    # ==============================
     # انتخاب سطح
+    # ==============================
 
     if chat_id in waiting_level:
 
@@ -147,6 +135,10 @@ def check(chat_id, text):
 
 
 
+    # ==============================
+    # اگر بازی وجود ندارد
+    # ==============================
+
     if chat_id not in games:
 
         return
@@ -160,6 +152,10 @@ def check(chat_id, text):
 
 
 
+    # ==============================
+    # خروج
+    # ==============================
+
     if text == "🚪 خروج از بازی":
 
         exit(chat_id)
@@ -168,6 +164,10 @@ def check(chat_id, text):
 
 
 
+    # ==============================
+    # جواب اشتباه
+    # ==============================
+
     if not check_answer(
         game,
         text
@@ -175,6 +175,7 @@ def check(chat_id, text):
 
 
         send_message(
+
             chat_id,
 
             "❌ اشتباه بود!\n\n"
@@ -188,9 +189,11 @@ def check(chat_id, text):
             None
         )
 
+
         return
-
-
+        # ==============================
+    # زمان پایان
+    # ==============================
 
     elapsed = round(
         time.time() - game["start_time"],
@@ -198,6 +201,10 @@ def check(chat_id, text):
     )
 
 
+
+    # ==============================
+    # جایزه‌ها
+    # ==============================
 
     rewards = {
 
@@ -248,11 +255,17 @@ def check(chat_id, text):
 
 
 
+    # ==============================
+    # پیام موفقیت
+    # ==============================
+
     send_message(
+
         chat_id,
 
         "🎉 عالی بود!\n\n"
-        f"⏱ زمان: {elapsed} ثانیه\n"
+        f"🧠 سطح: {game['level']}\n"
+        f"⏱ زمان: {elapsed} ثانیه\n\n"
         f"🪙 +{coins} سکه\n"
         f"⭐ +{xp} XP"
     )
@@ -263,11 +276,8 @@ def check(chat_id, text):
         chat_id,
         None
     )
-
-
-
-# ==========================================
-# خروج
+    # ==========================================
+# خروج از بازی
 # ==========================================
 
 def exit(chat_id):
