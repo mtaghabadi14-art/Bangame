@@ -110,6 +110,30 @@ def start(room):
                 ["🌍 شهر یا کشور"],
                 ["🖐 اعضای بدن"],
                 ["🎬 فیلم یا سریال"],
-                ["⬅️ پایان"]
+                ["🚪 خروج از بازی"]
             ]
         )
+        # ==========================================
+# خروج از بازی اسم و فامیل
+# ==========================================
+
+def exit_game(room_id, chat_id):
+
+    if room_id in games:
+
+        games[room_id]["players"] = [
+            p for p in games[room_id]["players"]
+            if p != chat_id
+        ]
+
+        send_message(
+            chat_id,
+            "🚪 از بازی اسم و فامیل خارج شدی."
+        )
+
+
+        # اگر کسی باقی نماند، بازی پاک شود
+
+        if len(games[room_id]["players"]) == 0:
+
+            del games[room_id]

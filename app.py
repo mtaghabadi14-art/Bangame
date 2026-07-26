@@ -177,7 +177,21 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
-                    # ==============================
+            
+                if room.game == "esm_famil":
+
+                    if text == "🚪 خروج از بازی":
+
+                        esm_handler.exit_game(
+                            room.room_id,
+                            chat_id
+                        )
+
+                        return {
+                            "ok": True
+                        }
+                    
+        # ==============================
         # /start
         # ==============================
 
