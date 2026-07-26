@@ -47,6 +47,7 @@ from handlers.rooms import (
     open_create_room,
     create_rps_room,
     create_tictactoe_room,
+    create_esm_famil_room,
     request_join,
     receive_room_code,
     exit_room
@@ -314,6 +315,14 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
+        elif text == "✍️ اسم و فامیل":
+
+          create_esm_famil_room(chat_id)
+
+          return {
+            "ok": True
+       }
         # ==============================
         # بازی سرعت تایپ
         # ==============================

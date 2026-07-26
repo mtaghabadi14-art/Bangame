@@ -106,6 +106,36 @@ def create_tictactoe_room(chat_id):
         f"⏳ منتظر بازیکن دوم..."
     )
 
+    # ==========================================
+    # ساخت اتاق اسم و فامیل
+    # ==========================================
+
+    def create_esm_famil_room(chat_id):
+
+     room = create_room(
+        game="esm_famil",
+        host=chat_id,
+        min_players=2,
+        max_players=8
+    )
+
+    if room is None:
+
+        send_message(
+            chat_id,
+            "❌ ابتدا از اتاق فعلی خارج شو."
+        )
+
+        return
+
+    send_message(
+        chat_id,
+        f"✍️ اتاق اسم و فامیل ساخته شد.\n\n"
+        f"🔑 کد اتاق: {room.room_id}\n"
+        f"👥 1 / 8 بازیکن\n\n"
+        f"⏳ منتظر بازیکنان..."
+    )
+
 
 
 # ==========================================
@@ -258,3 +288,4 @@ def exit_room(chat_id):
             player,
             "⚠️ یکی از بازیکنان از اتاق خارج شد."
         )
+    
