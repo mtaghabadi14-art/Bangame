@@ -55,7 +55,8 @@ from handlers.rooms import (
 
 from handlers import (
     tictactoe as ttt_handler,
-    rps as rps_handler
+    rps as rps_handler,
+    esm_famil as esm_handler
 )
 
 from rooms.manager import get_player_room

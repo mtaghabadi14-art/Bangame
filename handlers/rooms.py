@@ -7,6 +7,7 @@ from handlers.menu import (
 
 from handlers import tictactoe
 from handlers import rps
+from handlers import esm_famil
 
 from rooms.manager import (
     create_room,
@@ -240,6 +241,19 @@ def receive_room_code(chat_id, code):
 
 
         rps.start(room)
+
+
+    elif room.game == "esm_famil":
+
+        for player in room.players:
+
+            send_message(
+                 player,
+                "✍️ بازی اسم و فامیل آماده شد!"
+            )
+
+
+    esm_famil.start(room)
 
 
 
