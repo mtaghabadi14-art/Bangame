@@ -6,6 +6,7 @@ from handlers import typing as typing_handler
 from handlers import memory
 from handlers import word as word_handler
 from handlers import math_game
+from handlers import reaction
 
 from rubika import send_message
 
@@ -305,7 +306,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-                # ==============================
+        # ==============================
         # بازی سرعت تایپ
         # ==============================
 
@@ -420,8 +421,32 @@ async def receive_update(request: Request):
 
             return {
                 "ok": True
+           }
+
+        # ==============================
+        # بازی واکنش سریع
+        # ==============================
+
+        elif text == "⚡ واکنش سریع":
+
+            reaction.start(chat_id)
+
+            return {
+                "ok": True
             }
-                # ==============================
+
+
+        elif chat_id in reaction.games:
+
+            reaction.check(
+                chat_id,
+                text
+            )
+
+            return {
+                "ok": True
+            }
+        # ==============================
         # بازی حدس عدد
         # ==============================
 
