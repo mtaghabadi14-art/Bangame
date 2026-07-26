@@ -288,4 +288,5 @@ def exit_room(chat_id):
             player,
             "⚠️ یکی از بازیکنان از اتاق خارج شد."
         )
+        # esm famil update
     
