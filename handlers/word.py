@@ -13,6 +13,8 @@ games = {}
 
 waiting_level = set()
 
+last_level = {}
+
 
 # ==========================================
 # شروع بازی
@@ -63,6 +65,8 @@ def select_level(chat_id, level):
 
     games[chat_id] = game
 
+    last_level[chat_id] = level
+
     send_keypad(
 
         chat_id,
@@ -77,9 +81,7 @@ def select_level(chat_id, level):
         ]
 
     )
-
-
-# ==========================================
+    # ==========================================
 # بررسی جواب
 # ==========================================
 
@@ -95,10 +97,7 @@ def check(chat_id, text):
 
             waiting_level.remove(chat_id)
 
-            select_level(
-                chat_id,
-                "easy"
-            )
+            select_level(chat_id, "easy")
 
             return
 
@@ -106,10 +105,7 @@ def check(chat_id, text):
 
             waiting_level.remove(chat_id)
 
-            select_level(
-                chat_id,
-                "medium"
-            )
+            select_level(chat_id, "medium")
 
             return
 
@@ -117,10 +113,7 @@ def check(chat_id, text):
 
             waiting_level.remove(chat_id)
 
-            select_level(
-                chat_id,
-                "hard"
-            )
+            select_level(chat_id, "hard")
 
             return
 
@@ -138,6 +131,21 @@ def check(chat_id, text):
             )
 
             return
+
+    # ------------------------------
+    # بازی مجدد
+    # ------------------------------
+
+    if text == "🔁 بازی مجدد":
+
+        if chat_id in last_level:
+
+            select_level(
+                chat_id,
+                last_level[chat_id]
+            )
+
+        return
 
     # ------------------------------
     # اگر بازی فعال نیست
@@ -165,24 +173,23 @@ def check(chat_id, text):
     # جواب اشتباه
     # ------------------------------
 
-    if not check_answer(
-        game,
-        text
-    ):
+    if not check_answer(game, text):
 
-        send_message(
+        send_keypad(
 
             chat_id,
 
             "❌ اشتباه بود!\n\n"
-            f"✅ جواب درست: {game['word']}"
+            f"✅ جواب درست: {game['word']}",
+
+            [
+                ["🔁 بازی مجدد"],
+                ["🚪 خروج از بازی"]
+            ]
 
         )
 
-        games.pop(
-            chat_id,
-            None
-        )
+        games.pop(chat_id, None)
 
         return
 
@@ -205,10 +212,7 @@ def check(chat_id, text):
         "medium": 10,
         "hard": 20
 
-    }.get(
-        game["level"],
-        5
-    )
+    }.get(game["level"], 5)
 
     xp = {
 
@@ -216,22 +220,13 @@ def check(chat_id, text):
         "medium": 5,
         "hard": 8
 
-    }.get(
-        game["level"],
-        3
-    )
+    }.get(game["level"], 3)
 
-    add_coins(
-        chat_id,
-        coins
-    )
+    add_coins(chat_id, coins)
 
-    give_xp(
-        chat_id,
-        xp
-    )
+    give_xp(chat_id, xp)
 
-    send_message(
+    send_keypad(
 
         chat_id,
 
@@ -240,17 +235,17 @@ def check(chat_id, text):
         f"⏱ زمان: {elapsed} ثانیه\n\n"
 
         f"🪙 +{coins} سکه\n"
-        f"⭐ +{xp} XP"
+        f"⭐ +{xp} XP",
+
+        [
+            ["🔁 بازی مجدد"],
+            ["🚪 خروج از بازی"]
+        ]
 
     )
 
-    games.pop(
-        chat_id,
-        None
-    )
-
-
-# ==========================================
+    games.pop(chat_id, None)
+    # ==========================================
 # خروج
 # ==========================================
 
@@ -273,4 +268,3 @@ def exit(chat_id):
     )
 
     games_menu(chat_id)
-
