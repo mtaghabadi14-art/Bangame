@@ -410,6 +410,7 @@ async def receive_update(request: Request):
         elif (
             chat_id in word_handler.games
             or chat_id in word_handler.waiting_level
+            or text == "🔁 بازی مجدد"
         ):
 
             word_handler.check(
@@ -556,4 +557,3 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     )
-    
