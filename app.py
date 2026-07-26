@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Request
 import time
 
-from rubika import send_message
+from handlers import leaderboard
+from handlers import typing as typing_handler
+from handlers import memory
+from handlers import word as word_handler
+from handlers import math_game
 
-# ==============================
-# Database
-# ==============================
+from rubika import send_message
 
 from database import (
     create_tables,
@@ -14,38 +16,16 @@ from database import (
     get_user
 )
 
-# ==============================
-# Menus
-# ==============================
-
 from handlers.menu import (
     main_menu,
     games_menu
 )
-
-# ==============================
-# Profile
-# ==============================
 
 from handlers.profile import (
     show_profile,
     show_wallet,
     daily
 )
-
-# ==============================
-# Leaderboard
-# ==============================
-
-from handlers import leaderboard
-
-# ==============================
-# Offline Games
-# ==============================
-
-from handlers import typing as typing_handler
-from handlers import math_game
-from handlers import memory as memory_handler
 
 from handlers.guess import (
     start as guess_start,
@@ -58,10 +38,6 @@ from handlers.dice import (
     roll as dice_roll,
     exit as dice_exit
 )
-
-# ==============================
-# Online Rooms
-# ==============================
 
 from handlers.rooms import (
     open_room_menu,
@@ -78,11 +54,11 @@ from handlers import (
     rps as rps_handler
 )
 
-from rooms.manager import (
-    get_player_room
-)
+from rooms.manager import get_player_room
+
 
 print("########## APP.PY LOADED ##########")
+
 
 app = FastAPI()
 
@@ -91,9 +67,6 @@ add_typing_columns()
 
 states = {}
 
-# ==============================
-# Home
-# ==============================
 
 @app.get("/")
 def home():
@@ -102,10 +75,6 @@ def home():
         "status": "Bangame Online 🚀"
     }
 
-
-# ==============================
-# Webhook
-# ==============================
 
 @app.post("/receiveUpdate")
 async def receive_update(request: Request):
@@ -132,6 +101,7 @@ async def receive_update(request: Request):
             }
 
         chat_id = update["chat_id"]
+
         msg = update["new_message"]
 
         text = msg.get(
@@ -146,10 +116,6 @@ async def receive_update(request: Request):
 
         print("TEXT:", text)
         print("BUTTON_ID:", button_id)
-
-        # ==============================
-        # ساخت کاربر
-        # ==============================
 
         if not get_user(chat_id):
 
@@ -190,7 +156,7 @@ async def receive_update(request: Request):
                     "ok": True
                 }
 
-            elif room.game == "rps":
+            if room.game == "rps":
 
                 rps_handler.handle(
                     room,
@@ -203,8 +169,7 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
-
-        # ==============================
+                    # ==============================
         # /start
         # ==============================
 
@@ -222,9 +187,6 @@ async def receive_update(request: Request):
             }
 
         # ==============================
-        # از اینجا بخش ۲ شروع می‌شود...
-        # ==============================
-                # ==============================
         # منوی اصلی
         # ==============================
 
@@ -236,7 +198,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         elif text == "👤 پروفایل":
 
             show_profile(chat_id)
@@ -244,7 +205,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
 
         elif text == "🪙 کیف پول":
 
@@ -254,7 +214,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         elif text == "🎁 جایزه روزانه":
 
             daily(chat_id)
@@ -262,20 +221,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-
-        # ==============================
-        # لیدربورد
-        # ==============================
-
-        elif text == "🏆 لیدربورد سرعت تایپ":
-
-            leaderboard.typing(chat_id)
-
-            return {
-                "ok": True
-            }
-
 
         # ==============================
         # اتاق بازی
@@ -289,7 +234,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         elif text == "➕ ساخت اتاق":
 
             open_create_room(chat_id)
@@ -297,7 +241,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
 
         elif text == "🚪 ورود به اتاق":
 
@@ -307,7 +250,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         elif text == "🚪 خروج از اتاق":
 
             exit_room(chat_id)
@@ -316,19 +258,17 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         # ==============================
         # برگشت
         # ==============================
 
         elif text == "برگشت":
 
-            main_menu(chat_id)
+            games_menu(chat_id)
 
             return {
                 "ok": True
             }
-
 
         elif text == "برگشت به منوی اصلی":
 
@@ -338,7 +278,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         elif text == "برگشت به اتاق بازی":
 
             open_room_menu(chat_id)
@@ -347,9 +286,8 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         # ==============================
-        # ساخت اتاق بازی
+        # ساخت اتاق
         # ==============================
 
         elif text == "✂️ سنگ کاغذ قیچی":
@@ -360,7 +298,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         elif text == "⭕ دوز":
 
             create_tictactoe_room(chat_id)
@@ -368,10 +305,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-        # ==============================
-        # از اینجا بخش ۳ شروع می‌شود...
-        # ==============================
                 # ==============================
         # بازی سرعت تایپ
         # ==============================
@@ -383,7 +316,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
 
         elif (
             chat_id in typing_handler.games
@@ -399,6 +331,17 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+        # ==============================
+        # لیدربورد سرعت تایپ
+        # ==============================
+
+        elif text == "🏆 لیدربورد سرعت تایپ":
+
+            leaderboard.typing(chat_id)
+
+            return {
+                "ok": True
+            }
 
         # ==============================
         # بازی محاسبات سریع
@@ -411,7 +354,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
 
         elif (
             chat_id in math_game.games
@@ -433,19 +375,18 @@ async def receive_update(request: Request):
 
         elif text == "🧠 بازی حافظه":
 
-            memory_handler.start(chat_id)
+            memory.start(chat_id)
 
             return {
                 "ok": True
             }
 
-
         elif (
-            chat_id in memory_handler.games
-            or chat_id in memory_handler.waiting_level
+            chat_id in memory.games
+            or chat_id in memory.waiting_level
         ):
 
-            memory_handler.check(
+            memory.check(
                 chat_id,
                 text
             )
@@ -453,7 +394,33 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
         # ==============================
+        # بازی کامل کردن کلمه
+        # ==============================
+
+        elif text == "📝 کامل کردن کلمه":
+
+            word_handler.start(chat_id)
+
+            return {
+                "ok": True
+            }
+
+        elif (
+            chat_id in word_handler.games
+            or chat_id in word_handler.waiting_level
+        ):
+
+            word_handler.check(
+                chat_id,
+                text
+            )
+
+            return {
+                "ok": True
+            }
+                # ==============================
         # بازی حدس عدد
         # ==============================
 
@@ -467,7 +434,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
 
         elif (
             chat_id in states
@@ -508,7 +474,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         elif text == "🎲 ریختن تاس":
 
             dice_roll(chat_id)
@@ -517,7 +482,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
         elif text == "🚪 خروج از بازی":
 
             dice_exit(chat_id)
@@ -525,10 +489,6 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-        # ==============================
-        # از اینجا بخش ۴ شروع می‌شود...
-        # ==============================
                 # ==============================
         # خروج از منو
         # ==============================
@@ -568,7 +528,9 @@ async def receive_update(request: Request):
             )
 
         except Exception:
+
             pass
+
 
     end_time = time.time()
 
@@ -580,8 +542,6 @@ async def receive_update(request: Request):
     return {
         "ok": True
     }
-
-
 # ==========================================
 # Run Server
 # ==========================================
@@ -596,3 +556,4 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     )
+    
