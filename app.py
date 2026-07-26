@@ -119,6 +119,9 @@ async def receive_update(request: Request):
 
         print("TEXT:", text)
         print("BUTTON_ID:", button_id)
+        
+        print("TEXT repr:", repr(text))
+        print("BUTTON repr:", repr(button_id))
 
         if not get_user(chat_id):
 
