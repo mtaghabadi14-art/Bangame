@@ -77,7 +77,9 @@ def select_level(chat_id, level):
         ]
 
     )
-    # ==========================================
+
+
+# ==========================================
 # بررسی جواب
 # ==========================================
 
@@ -100,7 +102,6 @@ def check(chat_id, text):
 
             return
 
-
         elif text == "🟡 متوسط":
 
             waiting_level.remove(chat_id)
@@ -111,7 +112,6 @@ def check(chat_id, text):
             )
 
             return
-
 
         elif text == "🔴 سخت":
 
@@ -124,13 +124,20 @@ def check(chat_id, text):
 
             return
 
-
         elif text == "🚪 خروج از بازی":
 
             exit(chat_id)
 
             return
 
+        else:
+
+            send_message(
+                chat_id,
+                "❌ یکی از سطح‌ها را انتخاب کن."
+            )
+
+            return
 
     # ------------------------------
     # اگر بازی فعال نیست
@@ -139,7 +146,6 @@ def check(chat_id, text):
     if chat_id not in games:
 
         return
-
 
     # ------------------------------
     # خروج
@@ -151,11 +157,9 @@ def check(chat_id, text):
 
         return
 
-
     from games.word import check as check_answer
 
     game = games[chat_id]
-
 
     # ------------------------------
     # جواب اشتباه
@@ -182,7 +186,6 @@ def check(chat_id, text):
 
         return
 
-
     # ------------------------------
     # زمان
     # ------------------------------
@@ -192,7 +195,6 @@ def check(chat_id, text):
         2
     )
 
-
     # ------------------------------
     # جایزه
     # ------------------------------
@@ -200,9 +202,7 @@ def check(chat_id, text):
     coins = {
 
         "easy": 5,
-
         "medium": 10,
-
         "hard": 20
 
     }.get(
@@ -210,13 +210,10 @@ def check(chat_id, text):
         5
     )
 
-
     xp = {
 
         "easy": 3,
-
         "medium": 5,
-
         "hard": 8
 
     }.get(
@@ -224,18 +221,15 @@ def check(chat_id, text):
         3
     )
 
-
     add_coins(
         chat_id,
         coins
     )
 
-
     give_xp(
         chat_id,
         xp
     )
-
 
     send_message(
 
@@ -250,12 +244,13 @@ def check(chat_id, text):
 
     )
 
-
     games.pop(
         chat_id,
         None
     )
-    # ==========================================
+
+
+# ==========================================
 # خروج
 # ==========================================
 
@@ -278,3 +273,4 @@ def exit(chat_id):
     )
 
     games_menu(chat_id)
+
