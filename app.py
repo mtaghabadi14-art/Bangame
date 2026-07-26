@@ -7,6 +7,8 @@ from handlers import memory
 from handlers import word as word_handler
 from handlers import math_game
 from handlers import reaction
+from handlers import reaction as reaction_handler
+from games import reaction as reaction_game
 
 from rubika import send_message
 
@@ -429,16 +431,16 @@ async def receive_update(request: Request):
 
         elif text == "⚡ واکنش سریع":
 
-            reaction.start(chat_id)
+            reaction_handler.start(chat_id)
 
             return {
                 "ok": True
             }
 
 
-        elif chat_id in reaction.games:
+        elif chat_id in reaction_game.games:
 
-            reaction.check(
+            reaction_handler.check(
                 chat_id,
                 text
             )
