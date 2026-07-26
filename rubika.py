@@ -55,6 +55,8 @@ def call_api(method, data=None):
         response.raise_for_status()
 
         result = response.json()
+        
+        print("API RESULT:", result)
 
         end = time.time()
 

@@ -119,7 +119,7 @@ async def receive_update(request: Request):
 
         print("TEXT:", text)
         print("BUTTON_ID:", button_id)
-        
+
         print("TEXT repr:", repr(text))
         print("BUTTON repr:", repr(button_id))
 
@@ -179,7 +179,10 @@ async def receive_update(request: Request):
         # /start
         # ==============================
 
-        if text == "/start":
+        if (
+             text == "/start"
+            or text.endswith("/start")
+        ):
 
             states.pop(
                 chat_id,
