@@ -79,11 +79,11 @@ def select_level(chat_id, level):
                 "🚪 خروج از بازی"
             ]
         ]
-
     )
+
     # ==========================================
-# بررسی جواب
-# ==========================================
+    # بررسی جواب
+    # ==========================================
 
 def check(chat_id, text):
 
@@ -138,15 +138,14 @@ def check(chat_id, text):
 
     if text == "🔁 بازی مجدد":
 
-     if chat_id in last_level:
+       if chat_id in last_level:
 
-        select_level(
-            chat_id,
-            last_level[chat_id]
-        )
+           select_level(
+               chat_id,
+               last_level[chat_id]
+           )
 
-    return
-
+       return
     # ------------------------------
     # اگر بازی فعال نیست
     # ------------------------------
