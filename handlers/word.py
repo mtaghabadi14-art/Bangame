@@ -137,24 +137,15 @@ def check(chat_id, text):
     # ------------------------------
 
     if text == "🔁 بازی مجدد":
-           print(last_level)
 
-    if chat_id in last_level:
+     if chat_id in last_level:
 
-        select_level(chat_id, last_level[chat_id])
+        select_level(
+            chat_id,
+            last_level[chat_id]
+        )
 
-    else:
-
-        print("پیدا نشد")
-
-        if chat_id in last_level:
-
-            select_level(
-                chat_id,
-                last_level[chat_id]
-            )
-
-        return
+    return
 
     # ------------------------------
     # اگر بازی فعال نیست
