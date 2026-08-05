@@ -130,10 +130,7 @@ async def receive_update(request: Request):
 
         if not get_user(chat_id):
             add_user(chat_id)
-            user_data = get_user(chat_id)
-
-            print("USER DATA:", user_data)
-            print("NICK WAITING:", nickname.waiting)
+            print("USER FROM DB:", get_user(chat_id))
 
             if (
                 chat_id not in nickname.waiting
