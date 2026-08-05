@@ -130,16 +130,23 @@ async def receive_update(request: Request):
 
         if not get_user(chat_id):
             add_user(chat_id)
-        if (
-            chat_id not in nickname.waiting
-            and not get_user(chat_id)[1]
-        ):
+            user_data = get_user(chat_id)
 
-            nickname.start(chat_id)
+            print("USER DATA:", user_data)
+            print("NICK WAITING:", nickname.waiting)
 
-            return {
-                "ok": True
-            }
+            if (
+                chat_id not in nickname.waiting
+                and not get_user(chat_id)[1]
+            ):
+
+                print("➡️ START NICKNAME FLOW")
+
+                nickname.start(chat_id)
+
+                return {
+                    "ok": True
+                }
 
         elif chat_id in nickname.waiting:
 
@@ -215,25 +222,18 @@ async def receive_update(request: Request):
                     "ok": True
                 }
 
-            if chat_id in nickname.waiting:
-
-               nickname.check(
-                   chat_id,
-                   text
-               )
-
-               return {
-                   "ok": True
-               }
+            
                     
         # ==============================
         # /start
         # ==============================
 
         if (
-             text == "/start"
+            text == "/start"
             or text.endswith("/start")
         ):
+
+            print("➡️ START MAIN MENU FLOW")
 
             states.pop(
                 chat_id,
