@@ -190,20 +190,23 @@ def get_game_data(room):
 # ==========================================
 
 def handle(room, player, text):
+
     print("ESM HANDLE:", text)
 
-    # تست خروج خودکار بعد از هر پیام
     if text == "تمام":
-    
+
+        print("CLOSING ESM ROOM:", room.room_id)
+
         delete_room(
             room.room_id
         )
-    
+
         send_message(
             player,
             "✅ بازی اسم و فامیل بسته شد."
         )
-    
+
+        return True
         return True
 
     print("ESM HANDLE:", text)
