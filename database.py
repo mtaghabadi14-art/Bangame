@@ -1,6 +1,12 @@
 import sqlite3
 
 DB_NAME = "bangame.db"
+import os
+
+print("DATABASE PATH:")
+print(os.path.abspath(DB_NAME))
+print("DATABASE EXISTS:")
+print(os.path.exists(DB_NAME))
 
 
 # ==========================================
