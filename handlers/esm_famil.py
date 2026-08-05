@@ -189,6 +189,8 @@ def get_game_data(room):
 
 def handle(room, player, text):
 
+    print("ESM HANDLE:", text)
+
 
     # خروج از بازی
 
