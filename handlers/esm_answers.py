@@ -28,6 +28,9 @@ def choose_category(room, player, category):
         room.data["answers"][player] = {}
 
 
+    old_answer = room.data["answers"][player].get(category)
+
+
     set_waiting(
         room,
         player,
@@ -35,10 +38,21 @@ def choose_category(room, player, category):
     )
 
 
-    send_message(
-        player,
-        f"✍️ جواب {category} را بنویس."
-    )
+    if old_answer:
+
+        send_message(
+            player,
+            f"✏️ جواب قبلی {category}:\n"
+            f"{old_answer}\n\n"
+            f"جواب جدید را بفرست تا ویرایش شود."
+        )
+
+    else:
+
+        send_message(
+            player,
+            f"✍️ جواب {category} را بنویس."
+        )
 
 
 
