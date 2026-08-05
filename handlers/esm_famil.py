@@ -2,6 +2,8 @@ import random
 
 from rubika import send_message
 
+from rooms.manager import remove_room
+
 from handlers.esm_buttons import (
     show_categories
 )
@@ -335,6 +337,10 @@ def finish_round(room):
             "🎉 دور بازی تمام شد!\n"
             "به‌زودی امتیازدهی اضافه می‌شود."
         )
+
+    remove_room(
+        room.room_id
+    )
 
 
 
