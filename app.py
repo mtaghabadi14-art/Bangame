@@ -150,6 +150,8 @@ async def receive_update(request: Request):
 
         if room:
 
+            print("ROOM GAME:", room.game)
+
             if room.game == "tictactoe":
 
                 ttt_handler.handle(
