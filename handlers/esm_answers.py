@@ -117,10 +117,16 @@ def ready(room, player):
 
 def finish_waiting(room):
 
+    from handlers.esm_check import show_result
+
+
     for player in room.players:
 
         send_message(
             player,
             "🎉 همه آماده شدند!\n"
-            "مرحله بررسی جواب‌ها شروع می‌شود."
+            "🔎 در حال بررسی جواب‌ها..."
         )
+
+
+    show_result(room)
