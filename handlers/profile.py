@@ -18,14 +18,16 @@ def show_profile(chat_id):
         return
 
     (
-        _,
-        coins,
-        level,
-        xp,
-        typing_games,
-        typing_best_time,
-        typing_best_wpm
-    ) = user
+    _,
+    coins,
+    level,
+    xp,
+    typing_games,
+    typing_best_time,
+    typing_best_wpm,
+    nickname,
+    title
+) = user
 
     if typing_best_time == 0:
         best_time = "-"
@@ -47,6 +49,9 @@ def show_profile(chat_id):
         f"🎮 تعداد بازی: {typing_games}\n"
         f"🏆 بهترین زمان: {best_time}\n"
         f"⚡ بهترین سرعت: {best_wpm}"
+        f"👤 لقب: {nickname}"
+        f"🏷 عنوان: {title}"
+
     )
 
 
