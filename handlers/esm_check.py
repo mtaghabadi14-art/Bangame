@@ -160,18 +160,66 @@ def show_result(room):
 
     scores = check_game(room)
 
+    letter = room.data.get("letter")
 
-    for player in room.players:
+    categories = [
+        "👤 اسم",
+        "🏠 فامیل",
+        "🍎 میوه",
+        "🍔 غذا",
+        "🎨 رنگ",
+        "📦 اشیا",
+        "🐶 حیوان",
+        "🌍 شهر یا کشور",
+        "🖐 اعضای بدن",
+        "🎬 فیلم یا سریال"
+    ]
 
-        text = "🎉 نتیجه اسم و فامیل\n\n"
 
-        for p, score in scores.items():
+    text = (
+        "🎉 نتیجه اسم و فامیل\n\n"
+        f"🔤 حرف انتخاب شده: {letter}\n\n"
+    )
 
-            text += (
-                f"👤 {p}\n"
-                f"⭐ {score} امتیاز\n\n"
+
+    # نمایش جواب ها
+
+    for category in categories:
+
+        text += f"{category}:\n"
+
+
+        for player, answers in room.data["answers"].items():
+
+            answer = answers.get(
+                category,
+                "❌"
             )
 
+            text += (
+                f"👤 {player}: "
+                f"{answer}\n"
+            )
+
+        text += "\n"
+
+
+
+    # امتیاز نهایی
+
+    text += "🏆 امتیاز نهایی:\n\n"
+
+
+    for player, score in scores.items():
+
+        text += (
+            f"👤 {player}\n"
+            f"⭐ {score} امتیاز\n\n"
+        )
+
+
+
+    for player in room.players:
 
         send_message(
             player,
