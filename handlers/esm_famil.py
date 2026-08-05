@@ -249,7 +249,19 @@ def handle(room, player, text):
 
         return True
 
+    # تست خروج خودکار بعد از هر پیام
+    if text == "تمام":
 
+        delete_room(
+            room.room_id
+        )
+
+        send_message(
+            player,
+            "✅ بازی اسم و فامیل بسته شد."
+        )
+
+        return True
 
     return False
 
