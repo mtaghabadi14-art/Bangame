@@ -1,21 +1,21 @@
-import sqlite3
-
-DB_NAME = "bangame.db"
 import os
-
-print("DATABASE PATH:")
-print(os.path.abspath(DB_NAME))
-print("DATABASE EXISTS:")
-print(os.path.exists(DB_NAME))
+import psycopg2  
 
 
 # ==========================================
-# اتصال دیتابیس
+# اتصال به PostgreSQL (Supabase)
 # ==========================================
+
+DATABASE_URL = os.getenv(
+    "DATABASE_URL"
+)
+
 
 def connect():
 
-    return sqlite3.connect(DB_NAME)
+    return psycopg2.connect(
+        DATABASE_URL
+    )
 
 
 # ==========================================
@@ -28,27 +28,32 @@ def create_tables():
 
     cur = conn.cursor()
 
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS users (
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
 
-        user_id TEXT PRIMARY KEY,
+            user_id TEXT PRIMARY KEY,
 
-        coins INTEGER DEFAULT 1000,
+            coins INTEGER DEFAULT 1000,
 
-        level INTEGER DEFAULT 1,
+            level INTEGER DEFAULT 1,
 
-        xp INTEGER DEFAULT 0,
+            xp INTEGER DEFAULT 0,
 
-        typing_games INTEGER DEFAULT 0,
+            typing_games INTEGER DEFAULT 0,
 
-        typing_best_time REAL DEFAULT 0,
+            typing_best_time REAL DEFAULT 0,
 
-        typing_best_wpm REAL DEFAULT 0
+            typing_best_wpm REAL DEFAULT 0
 
+        )
+        """
     )
-    """)
+
 
     conn.commit()
+
+    cur.close()
 
     conn.close()
 
@@ -63,15 +68,26 @@ def add_typing_columns():
 
     cur = conn.cursor()
 
+
     columns = [
 
-        ("typing_games", "INTEGER DEFAULT 0"),
+        (
+            "typing_games",
+            "INTEGER DEFAULT 0"
+        ),
 
-        ("typing_best_time", "REAL DEFAULT 0"),
+        (
+            "typing_best_time",
+            "REAL DEFAULT 0"
+        ),
 
-        ("typing_best_wpm", "REAL DEFAULT 0")
+        (
+            "typing_best_wpm",
+            "REAL DEFAULT 0"
+        )
 
     ]
+
 
     for name, dtype in columns:
 
@@ -84,16 +100,18 @@ def add_typing_columns():
                 """
             )
 
-        except sqlite3.OperationalError:
 
-            pass
+        except Exception:
+
+            conn.rollback()
+
 
     conn.commit()
 
+    cur.close()
+
     conn.close()
-
-
-# ==========================================
+    # ==========================================
 # ساخت کاربر
 # ==========================================
 
@@ -105,15 +123,23 @@ def add_user(user_id):
 
     cur.execute(
         """
-        INSERT OR IGNORE INTO users(user_id)
-        VALUES(?)
+        INSERT INTO users(user_id)
+        VALUES(%s)
+
+        ON CONFLICT (user_id)
+        DO NOTHING
         """,
-        (user_id,)
+        (
+            user_id,
+        )
     )
 
     conn.commit()
 
+    cur.close()
+
     conn.close()
+
 
 
 # ==========================================
@@ -130,16 +156,24 @@ def get_user(user_id):
         """
         SELECT *
         FROM users
-        WHERE user_id=?
+        WHERE user_id=%s
         """,
-        (user_id,)
+        (
+            user_id,
+        )
     )
 
     user = cur.fetchone()
 
+
+    cur.close()
+
     conn.close()
 
     return user
+
+
+
 # ==========================================
 # سکه
 # ==========================================
@@ -153,8 +187,8 @@ def add_coins(user_id, amount):
     cur.execute(
         """
         UPDATE users
-        SET coins = coins + ?
-        WHERE user_id=?
+        SET coins = coins + %s
+        WHERE user_id=%s
         """,
         (
             amount,
@@ -164,7 +198,10 @@ def add_coins(user_id, amount):
 
     conn.commit()
 
+    cur.close()
+
     conn.close()
+
 
 
 # ==========================================
@@ -180,8 +217,8 @@ def add_xp(user_id, amount):
     cur.execute(
         """
         UPDATE users
-        SET xp = xp + ?
-        WHERE user_id=?
+        SET xp = xp + %s
+        WHERE user_id=%s
         """,
         (
             amount,
@@ -191,7 +228,10 @@ def add_xp(user_id, amount):
 
     conn.commit()
 
+    cur.close()
+
     conn.close()
+
 
 
 # ==========================================
@@ -207,8 +247,8 @@ def set_level(user_id, level):
     cur.execute(
         """
         UPDATE users
-        SET level = ?
-        WHERE user_id=?
+        SET level=%s
+        WHERE user_id=%s
         """,
         (
             level,
@@ -218,7 +258,10 @@ def set_level(user_id, level):
 
     conn.commit()
 
+    cur.close()
+
     conn.close()
+
 
 
 # ==========================================
@@ -234,8 +277,8 @@ def set_xp(user_id, xp):
     cur.execute(
         """
         UPDATE users
-        SET xp = ?
-        WHERE user_id=?
+        SET xp=%s
+        WHERE user_id=%s
         """,
         (
             xp,
@@ -244,6 +287,8 @@ def set_xp(user_id, xp):
     )
 
     conn.commit()
+
+    cur.close()
 
     conn.close()
     # ==========================================
@@ -260,16 +305,20 @@ def update_typing_stats(
 
     cur = conn.cursor()
 
+
     # افزایش تعداد بازی‌ها
 
     cur.execute(
         """
         UPDATE users
         SET typing_games = typing_games + 1
-        WHERE user_id=?
+        WHERE user_id=%s
         """,
-        (user_id,)
+        (
+            user_id,
+        )
     )
+
 
     # گرفتن رکورد قبلی
 
@@ -279,19 +328,27 @@ def update_typing_stats(
             typing_best_time,
             typing_best_wpm
         FROM users
-        WHERE user_id=?
+        WHERE user_id=%s
         """,
-        (user_id,)
+        (
+            user_id,
+        )
     )
+
 
     data = cur.fetchone()
 
+
     new_time_record = False
+
     new_wpm_record = False
+
+
 
     if data:
 
         best_time, best_wpm = data
+
 
         # رکورد زمان
 
@@ -300,8 +357,8 @@ def update_typing_stats(
             cur.execute(
                 """
                 UPDATE users
-                SET typing_best_time=?
-                WHERE user_id=?
+                SET typing_best_time=%s
+                WHERE user_id=%s
                 """,
                 (
                     time_taken,
@@ -311,6 +368,8 @@ def update_typing_stats(
 
             new_time_record = True
 
+
+
         # رکورد سرعت
 
         if wpm > best_wpm:
@@ -318,8 +377,8 @@ def update_typing_stats(
             cur.execute(
                 """
                 UPDATE users
-                SET typing_best_wpm=?
-                WHERE user_id=?
+                SET typing_best_wpm=%s
+                WHERE user_id=%s
                 """,
                 (
                     wpm,
@@ -329,14 +388,23 @@ def update_typing_stats(
 
             new_wpm_record = True
 
+
+
     conn.commit()
+
+    cur.close()
 
     conn.close()
 
+
     return {
+
         "new_time_record": new_time_record,
+
         "new_wpm_record": new_wpm_record
+
     }
+
 
 
 # ==========================================
@@ -349,6 +417,7 @@ def get_typing_stats(user_id):
 
     cur = conn.cursor()
 
+
     cur.execute(
         """
         SELECT
@@ -356,14 +425,21 @@ def get_typing_stats(user_id):
             typing_best_time,
             typing_best_wpm
         FROM users
-        WHERE user_id=?
+        WHERE user_id=%s
         """,
-        (user_id,)
+        (
+            user_id,
+        )
     )
+
 
     data = cur.fetchone()
 
+
+    cur.close()
+
     conn.close()
+
 
     return data
 # ==========================================
@@ -376,6 +452,7 @@ def get_typing_leaderboard(limit=10):
 
     cur = conn.cursor()
 
+
     cur.execute(
         """
         SELECT
@@ -385,13 +462,20 @@ def get_typing_leaderboard(limit=10):
         FROM users
         WHERE typing_games > 0
         ORDER BY typing_best_wpm DESC
-        LIMIT ?
+        LIMIT %s
         """,
-        (limit,)
+        (
+            limit,
+        )
     )
+
 
     data = cur.fetchall()
 
+
+    cur.close()
+
     conn.close()
+
 
     return data
