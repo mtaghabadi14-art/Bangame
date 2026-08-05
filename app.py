@@ -173,23 +173,22 @@ async def receive_update(request: Request):
                         "button_id": button_id
                     }
                 )
-
+    
                 return {
                     "ok": True
                 }
             
                 if room.game == "esm_famil":
 
-                    if text == "🚪 خروج از بازی":
+                    esm_handler.handle(
+                        room,
+                        chat_id,
+                        text
+                    )
 
-                        esm_handler.exit_game(
-                            room.room_id,
-                            chat_id
-                        )
-
-                        return {
-                            "ok": True
-                        }
+                    return {
+                        "ok": True
+                    }
                     
         # ==============================
         # /start
