@@ -173,13 +173,22 @@ def delete_room(room_id):
 
     room = rooms.get(room_id)
 
+    print("DELETE ROOM:", room_id)
+    print("ROOM EXISTS:", room)
+
     if room is None:
         return False
 
     for player in room.players:
+
+        print("REMOVE PLAYER:", player)
+
         player_rooms.pop(player, None)
 
     rooms.pop(room_id, None)
+
+    print("ROOMS AFTER DELETE:", rooms)
+    print("PLAYERS AFTER DELETE:", player_rooms)
 
     return True
 
