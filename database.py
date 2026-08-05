@@ -1,5 +1,5 @@
 import os
-import psycopg2  
+import psycopg2
 
 
 # ==========================================
@@ -34,6 +34,10 @@ def create_tables():
 
             user_id TEXT PRIMARY KEY,
 
+            nickname TEXT,
+
+            title TEXT DEFAULT '🥉 تازه‌کار',
+
             coins INTEGER DEFAULT 1000,
 
             level INTEGER DEFAULT 1,
@@ -56,6 +60,7 @@ def create_tables():
     cur.close()
 
     conn.close()
+
 
 
 # ==========================================
@@ -84,7 +89,17 @@ def add_typing_columns():
         (
             "typing_best_wpm",
             "REAL DEFAULT 0"
-        )
+        ),
+
+        (
+            "nickname",
+            "TEXT"
+        ),
+
+        (
+            "title",
+            "TEXT DEFAULT '🥉 تازه‌کار'"
+        ),
 
     ]
 
@@ -111,7 +126,10 @@ def add_typing_columns():
     cur.close()
 
     conn.close()
-    # ==========================================
+
+
+
+# ==========================================
 # ساخت کاربر
 # ==========================================
 
@@ -134,6 +152,7 @@ def add_user(user_id):
         )
     )
 
+
     conn.commit()
 
     cur.close()
@@ -152,6 +171,7 @@ def get_user(user_id):
 
     cur = conn.cursor()
 
+
     cur.execute(
         """
         SELECT *
@@ -163,6 +183,7 @@ def get_user(user_id):
         )
     )
 
+
     user = cur.fetchone()
 
 
@@ -170,7 +191,85 @@ def get_user(user_id):
 
     conn.close()
 
+
     return user
+
+
+
+# ==========================================
+# ذخیره لقب
+# ==========================================
+
+def set_nickname(user_id, nickname):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+
+    cur.execute(
+        """
+        UPDATE users
+
+        SET nickname=%s
+
+        WHERE user_id=%s
+        """,
+        (
+            nickname,
+            user_id
+        )
+    )
+
+
+    conn.commit()
+
+
+    cur.close()
+
+    conn.close()
+
+
+
+# ==========================================
+# گرفتن لقب
+# ==========================================
+
+def get_nickname(user_id):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+
+    cur.execute(
+        """
+        SELECT nickname
+
+        FROM users
+
+        WHERE user_id=%s
+        """,
+        (
+            user_id
+        )
+    )
+
+
+    result = cur.fetchone()
+
+
+    cur.close()
+
+    conn.close()
+
+
+    if result:
+
+        return result[0]
+
+
+    return None
 
 
 
@@ -184,10 +283,13 @@ def add_coins(user_id, amount):
 
     cur = conn.cursor()
 
+
     cur.execute(
         """
         UPDATE users
+
         SET coins = coins + %s
+
         WHERE user_id=%s
         """,
         (
@@ -195,6 +297,7 @@ def add_coins(user_id, amount):
             user_id
         )
     )
+
 
     conn.commit()
 
@@ -214,10 +317,13 @@ def add_xp(user_id, amount):
 
     cur = conn.cursor()
 
+
     cur.execute(
         """
         UPDATE users
+
         SET xp = xp + %s
+
         WHERE user_id=%s
         """,
         (
@@ -225,6 +331,7 @@ def add_xp(user_id, amount):
             user_id
         )
     )
+
 
     conn.commit()
 
@@ -244,10 +351,13 @@ def set_level(user_id, level):
 
     cur = conn.cursor()
 
+
     cur.execute(
         """
         UPDATE users
+
         SET level=%s
+
         WHERE user_id=%s
         """,
         (
@@ -255,6 +365,7 @@ def set_level(user_id, level):
             user_id
         )
     )
+
 
     conn.commit()
 
@@ -274,10 +385,13 @@ def set_xp(user_id, xp):
 
     cur = conn.cursor()
 
+
     cur.execute(
         """
         UPDATE users
+
         SET xp=%s
+
         WHERE user_id=%s
         """,
         (
@@ -286,12 +400,16 @@ def set_xp(user_id, xp):
         )
     )
 
+
     conn.commit()
 
     cur.close()
 
     conn.close()
-    # ==========================================
+
+
+
+# ==========================================
 # آمار سرعت تایپ
 # ==========================================
 
@@ -306,12 +424,12 @@ def update_typing_stats(
     cur = conn.cursor()
 
 
-    # افزایش تعداد بازی‌ها
-
     cur.execute(
         """
         UPDATE users
+
         SET typing_games = typing_games + 1
+
         WHERE user_id=%s
         """,
         (
@@ -320,14 +438,14 @@ def update_typing_stats(
     )
 
 
-    # گرفتن رکورد قبلی
-
     cur.execute(
         """
         SELECT
             typing_best_time,
             typing_best_wpm
+
         FROM users
+
         WHERE user_id=%s
         """,
         (
@@ -344,20 +462,19 @@ def update_typing_stats(
     new_wpm_record = False
 
 
-
     if data:
 
         best_time, best_wpm = data
 
-
-        # رکورد زمان
 
         if best_time == 0 or time_taken < best_time:
 
             cur.execute(
                 """
                 UPDATE users
+
                 SET typing_best_time=%s
+
                 WHERE user_id=%s
                 """,
                 (
@@ -370,14 +487,14 @@ def update_typing_stats(
 
 
 
-        # رکورد سرعت
-
         if wpm > best_wpm:
 
             cur.execute(
                 """
                 UPDATE users
+
                 SET typing_best_wpm=%s
+
                 WHERE user_id=%s
                 """,
                 (
@@ -421,10 +538,15 @@ def get_typing_stats(user_id):
     cur.execute(
         """
         SELECT
+
             typing_games,
+
             typing_best_time,
+
             typing_best_wpm
+
         FROM users
+
         WHERE user_id=%s
         """,
         (
@@ -442,6 +564,9 @@ def get_typing_stats(user_id):
 
 
     return data
+
+
+
 # ==========================================
 # لیدربورد سرعت تایپ
 # ==========================================
@@ -456,12 +581,19 @@ def get_typing_leaderboard(limit=10):
     cur.execute(
         """
         SELECT
+
             user_id,
+
             typing_best_wpm,
+
             typing_best_time
+
         FROM users
+
         WHERE typing_games > 0
+
         ORDER BY typing_best_wpm DESC
+
         LIMIT %s
         """,
         (

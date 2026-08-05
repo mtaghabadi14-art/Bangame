@@ -8,6 +8,7 @@ from handlers import word as word_handler
 from handlers import math_game
 from handlers import reaction
 from handlers import reaction as reaction_handler
+from handlers import nickname
 from games import reaction as reaction_game
 
 from rubika import send_message
@@ -16,7 +17,8 @@ from database import (
     create_tables,
     add_typing_columns,
     add_user,
-    get_user
+    get_user,
+    set_nickname
 )
 
 from handlers.menu import (
@@ -71,6 +73,7 @@ create_tables()
 add_typing_columns()
 
 states = {}
+waiting_for_nickname = set()
 
 
 @app.get("/")
@@ -128,6 +131,59 @@ async def receive_update(request: Request):
         if not get_user(chat_id):
 
             add_user(chat_id)
+        if (
+            chat_id not in nickname.waiting
+            and not get_user(chat_id)[1]
+        ):
+
+            nickname.start(chat_id)
+
+            return {
+                "ok": True
+            }
+
+
+        # ==============================
+        # گرفتن لقب کاربر جدید
+        # ==============================
+
+        user = get_user(chat_id)
+
+        if user and user[1] is None:
+
+            if chat_id not in waiting_for_nickname:
+
+                waiting_for_nickname.add(chat_id)
+
+                send_message(
+                    chat_id,
+                    "🎉 خوش آمدی به Bangame!\n\n"
+                    "لطفاً یک لقب برای خودت انتخاب کن:"
+                )
+
+                return {
+                    "ok": True
+                }
+
+            else:
+
+                set_nickname(
+                    chat_id,
+                    text
+                )
+
+                waiting_for_nickname.remove(chat_id)
+
+                send_message(
+                    chat_id,
+                    f"✅ لقب شما ثبت شد:\n👤 {text}"
+                )
+
+                main_menu(chat_id)
+
+                return {
+                    "ok": True
+                }
 
         # ==============================
         # ورود به اتاق
@@ -191,6 +247,17 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
+
+            if chat_id in nickname.waiting:
+
+               nickname.check(
+                   chat_id,
+                   text
+               )
+
+               return {
+                   "ok": True
+               }
                     
         # ==============================
         # /start
