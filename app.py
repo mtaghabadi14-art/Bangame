@@ -180,17 +180,17 @@ async def receive_update(request: Request):
                     "ok": True
                 }
             
-                if room.game == "esm_famil":
+            if room.game == "esm_famil":
 
-                    esm_handler.handle(
-                        room,
-                        chat_id,
-                        text
-                    )
+                esm_handler.handle(
+                    room,
+                    chat_id,
+                    text
+                )
 
-                    return {
-                        "ok": True
-                    }
+                return {
+                    "ok": True
+                }
                     
         # ==============================
         # /start
