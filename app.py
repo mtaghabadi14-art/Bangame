@@ -129,7 +129,6 @@ async def receive_update(request: Request):
         print("BUTTON repr:", repr(button_id))
 
         if not get_user(chat_id):
-
             add_user(chat_id)
         if (
             chat_id not in nickname.waiting
@@ -142,48 +141,16 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+        elif chat_id in nickname.waiting:
 
-        # ==============================
-        # گرفتن لقب کاربر جدید
-        # ==============================
+            nickname.save(
+                chat_id,
+                text
+            )
 
-        user = get_user(chat_id)
-
-        if user and user[1] is None:
-
-            if chat_id not in waiting_for_nickname:
-
-                waiting_for_nickname.add(chat_id)
-
-                send_message(
-                    chat_id,
-                    "🎉 خوش آمدی به Bangame!\n\n"
-                    "لطفاً یک لقب برای خودت انتخاب کن:"
-                )
-
-                return {
-                    "ok": True
-                }
-
-            else:
-
-                set_nickname(
-                    chat_id,
-                    text
-                )
-
-                waiting_for_nickname.remove(chat_id)
-
-                send_message(
-                    chat_id,
-                    f"✅ لقب شما ثبت شد:\n👤 {text}"
-                )
-
-                main_menu(chat_id)
-
-                return {
-                    "ok": True
-                }
+            return {
+                "ok": True
+            }
 
         # ==============================
         # ورود به اتاق

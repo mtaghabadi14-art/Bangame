@@ -29,7 +29,7 @@ def start(chat_id):
 # ذخیره لقب
 # ==========================================
 
-def check(chat_id, text):
+def save(chat_id, text):
 
     nickname = text.strip()
 
