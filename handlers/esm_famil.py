@@ -177,9 +177,13 @@ def handle(room, player, text):
 
     if text == "🚪 خروج از بازی":
 
-        exit_game(
-            room.room_id,
-            player
+        delete_room(
+            room.room_id
+        )
+
+        send_message(
+            player,
+            "🚪 از بازی اسم و فامیل خارج شدی."
         )
 
         return True

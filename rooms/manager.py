@@ -165,6 +165,8 @@ def player_count(room):
 def get_players(room):
 
     return room.players.copy()
+
+
 # -----------------------------
 # حذف اتاق
 # -----------------------------
@@ -180,6 +182,7 @@ def delete_room(room_id):
     print("DELETE ROOM:", room_id)
 
 
+    # پاک کردن بازیکنان از player_rooms
     for player in room.players:
 
         print("REMOVE PLAYER:", player)
@@ -190,6 +193,7 @@ def delete_room(room_id):
         )
 
 
+    # حذف خود اتاق
     rooms.pop(
         room_id,
         None
