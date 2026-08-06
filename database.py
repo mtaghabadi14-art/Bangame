@@ -173,15 +173,24 @@ def get_user(user_id):
 
 
     cur.execute(
-        """
-        SELECT *
-        FROM users
-        WHERE user_id=%s
-        """,
-        (
-            user_id,
-        )
+    """
+    SELECT
+        user_id,
+        nickname,
+        title,
+        coins,
+        level,
+        xp,
+        typing_games,
+        typing_best_time,
+        typing_best_wpm
+    FROM users
+    WHERE user_id=%s
+    """,
+    (
+        user_id,
     )
+)
 
 
     user = cur.fetchone()
