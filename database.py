@@ -354,13 +354,21 @@ def add_xp(user_id, amount):
 # تغییر Level
 # ==========================================
 
+# ==========================================
+# تغییر Level و رتبه
+# ==========================================
+
 def set_level(user_id, level):
+
+    from utils.titles import get_title
+
 
     conn = connect()
 
     cur = conn.cursor()
 
 
+    # تغییر لول
     cur.execute(
         """
         UPDATE users
@@ -375,6 +383,58 @@ def set_level(user_id, level):
         )
     )
 
+
+    # گرفتن رتبه جدید
+    title = get_title(level)
+
+
+    # ذخیره رتبه جدید
+    cur.execute(
+        """
+        UPDATE users
+
+        SET title=%s
+
+        WHERE user_id=%s
+        """,
+        (
+            title,
+            user_id
+        )
+    )
+
+
+    conn.commit()
+
+
+    cur.close()
+
+    conn.close()
+
+
+    # ==========================================
+    # تغییر رتبه
+    # ==========================================
+
+def set_title(user_id, title):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+
+        SET title=%s
+
+        WHERE user_id=%s
+        """,
+        (
+            title,
+            user_id
+        )
+    )
 
     conn.commit()
 

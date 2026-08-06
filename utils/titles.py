@@ -1,21 +1,39 @@
 def get_title(level):
-    if level >= 100:
-        return "🏆 اسطوره Bangame"
 
-    elif level >= 50:
-        return "💎 افسانه"
+    ranks = [
 
-    elif level >= 30:
-        return "👑 استاد"
+        (1, "🥉 تازه‌کار"),
 
-    elif level >= 20:
-        return "🔥 حرفه‌ای"
+        (3, "🥈 بازیکن معمولی"),
 
-    elif level >= 10:
-        return "⚔️ مبارز"
+        (5, "🥇 بازیکن حرفه‌ای"),
 
-    elif level >= 5:
-        return "🎮 بازیکن"
+        (8, "🔥 جنگجوی Bangame"),
 
-    else:
-        return "🥉 تازه‌کار"
+        (12, "⚡ استاد بازی"),
+
+        (16, "💎 بازیکن الماس"),
+
+        (20, "👑 قهرمان"),
+
+        (30, "🌟 افسانه"),
+
+        (50, "🚀 اسطوره Bangame"),
+
+        (75, "🛡 فرمانروای بازی"),
+
+        (100, "🏆 پادشاه Bangame")
+
+    ]
+
+
+    title = "🥉 تازه‌کار"
+
+
+    for lvl, name in ranks:
+
+        if level >= lvl:
+            title = name
+
+
+    return title
