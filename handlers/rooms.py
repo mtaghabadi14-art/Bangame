@@ -287,6 +287,8 @@ def exit_room(chat_id):
 
     leave_room(chat_id)
 
+    print("AFTER EXIT ROOM:", get_player_room(chat_id))
+
 
 
     send_message(
