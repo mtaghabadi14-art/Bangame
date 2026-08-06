@@ -94,18 +94,15 @@ def show_profile(chat_id):
 
     if nickname is None:
 
-       nickname = "بدون لقب"
-
-       xp_need = level * 100
-       xp_text = f"{xp}/{xp_need}"
+        nickname = "بدون لقب"
 
     send_message(
         chat_id,
 
         f"👤 پروفایل\n\n"
 
-        f"✨ لقب: {nickname}\n"
-        f"{title}\n\n"
+        f"👤 لقب: {nickname}\n"
+        f"🏅 رتبه: {title}\n\n"
 
         f"🪙 سکه: {coins}\n"
         f"⭐ لول: {level}\n"

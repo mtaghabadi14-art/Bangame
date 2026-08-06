@@ -268,6 +268,14 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+        elif text == "✏️ تغییر لقب":
+
+             nickname.change_start(chat_id)
+
+             return {
+                 "ok": True
+            }
+
         elif text == "🪙 کیف پول":
 
             show_wallet(chat_id)

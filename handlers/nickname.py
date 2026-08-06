@@ -66,3 +66,15 @@ def save(chat_id, text):
     )
 
     main_menu(chat_id)
+    # ==========================================
+    # تغییر لقب از پروفایل
+    # ==========================================
+
+def change_start(chat_id):
+
+    waiting.add(chat_id)
+
+    send_message(
+        chat_id,
+        "✏️ لقب جدیدت را وارد کن:"
+    )
