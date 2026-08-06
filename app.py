@@ -9,6 +9,7 @@ from handlers import math_game
 from handlers import reaction
 from handlers import reaction as reaction_handler
 from handlers import nickname
+from handlers.menu import main_menu
 from games import reaction as reaction_game
 
 from rubika import send_message
@@ -325,7 +326,7 @@ async def receive_update(request: Request):
 
         elif text == "برگشت":
 
-            games_menu(chat_id)
+            main_menu(chat_id)
 
             return {
                 "ok": True
