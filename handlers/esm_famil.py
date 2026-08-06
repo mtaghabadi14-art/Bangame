@@ -3,6 +3,7 @@ import random
 from rubika import send_message
 
 from rooms.manager import delete_room
+from handlers.rooms import open_room_menu
 
 from handlers.esm_buttons import (
     show_categories
@@ -193,24 +194,6 @@ def handle(room, player, text):
 
     print("ESM HANDLE:", text)
 
-    if text == "تمام":
-
-        print("CLOSING ESM ROOM:", room.room_id)
-
-        delete_room(
-            room.room_id
-        )
-
-        send_message(
-            player,
-            "✅ بازی اسم و فامیل بسته شد."
-        )
-
-        return True
-        return True
-
-    print("ESM HANDLE:", text)
-
 
     # خروج از بازی
 
@@ -348,18 +331,20 @@ def exit_game(room_id, chat_id):
 
 def finish_round(room):
 
-    for player in room.players:
-
-        send_message(
-            player,
-            "🎉 دور بازی تمام شد!\n"
-            "به‌زودی امتیازدهی اضافه می‌شود."
-        )
+    players = room.players.copy()
 
     delete_room(
         room.room_id
     )
 
+    for player in players:
+
+        send_message(
+            player,
+            "🎉 دور بازی تمام شد!"
+        )
+
+        open_room_menu(player)
 
 
 # ==========================================
