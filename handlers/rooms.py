@@ -8,6 +8,7 @@ from handlers.menu import (
 from handlers import tictactoe
 from handlers import rps
 from handlers import esm_famil
+from rooms.manager import delete_room
 
 from rooms.manager import (
     create_room,
@@ -285,7 +286,9 @@ def exit_room(chat_id):
 
 
 
-    leave_room(chat_id)
+    delete_room(
+        room.room_id
+    )
 
     print("AFTER EXIT ROOM:", get_player_room(chat_id))
 
