@@ -253,7 +253,8 @@ def clear_answers(room):
 def exit_game(room, player):
 
     from rooms.manager import leave_room
-    from handlers.menu import main_menu
+    from handlers.menu import room_menu
+
 
     leave_room(player)
 
@@ -262,7 +263,7 @@ def exit_game(room, player):
         "🚪 از بازی اسم و فامیل خارج شدی."
     )
 
-    main_menu(player)
+    room_menu(player)
 
 
 # ==========================================
@@ -271,7 +272,7 @@ def exit_game(room, player):
 
 def finish_round(room):
 
-    from handlers.menu import main_menu
+    from handlers.menu import room_menu
 
     for player in room.players:
 
@@ -291,7 +292,7 @@ def finish_round(room):
     # برگشت به منوی اصلی و عوض شدن دکمه‌ها
     for player in room.players:
 
-        main_menu(player)
+        room_menu(player)
 
 
 # ==========================================
