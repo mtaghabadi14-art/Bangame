@@ -2,6 +2,8 @@ import os
 import time
 import requests
 
+from requests.adapters import HTTPAdapter
+
 
 # ==========================================
 # Bangame Rubika API v2
@@ -17,8 +19,6 @@ BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
 # ==========================================
 
 session = requests.Session()
-from requests.adapters import HTTPAdapter
-
 
 session.mount(
     "https://",
@@ -55,14 +55,17 @@ def call_api(method, data=None):
         response.raise_for_status()
 
         result = response.json()
-        
+
         print("API RESULT:", result)
 
         end = time.time()
 
-        print(f"✅ {method} ({end-start:.2f}s)")
+        print(
+            f"✅ {method} ({end-start:.2f}s)"
+        )
 
         return result
+
 
     except requests.exceptions.Timeout:
 
@@ -72,6 +75,7 @@ def call_api(method, data=None):
             "status": "TIMEOUT"
         }
 
+
     except Exception as e:
 
         print("❌", e)
@@ -80,6 +84,7 @@ def call_api(method, data=None):
             "status": "ERROR",
             "error": str(e)
         }
+
 
 
 # ==========================================
@@ -95,6 +100,7 @@ def send_message(chat_id, text):
             "text": text
         }
     )
+
 
 
 # ==========================================
@@ -131,11 +137,13 @@ def send_keypad(chat_id, text, buttons):
                     }
                 )
 
+
         rows.append(
             {
                 "buttons": button_row
             }
         )
+
 
     return call_api(
         "sendMessage",
@@ -149,6 +157,9 @@ def send_keypad(chat_id, text, buttons):
             }
         }
     )
+
+
+
 # ==========================================
 # Remove Keypad
 # ==========================================
@@ -165,6 +176,7 @@ def remove_keypad(chat_id, text="✅"):
     )
 
 
+
 # ==========================================
 # Get Bot Information
 # ==========================================
@@ -174,6 +186,7 @@ def get_me():
     return call_api(
         "getMe"
     )
+
 
 
 # ==========================================
@@ -189,22 +202,9 @@ def update_bot_endpoint(url):
             "type": "ReceiveUpdate"
         }
     )
-# ==========================================
-# Delete Message
-# ==========================================
 
-def delete_message(
-    chat_id,
-    message_id
-):
 
-    return call_api(
-        "deleteMessage",
-        {
-            "chat_id": chat_id,
-            "message_id": message_id
-        }
-    )
+
 # ==========================================
 # Delete Message
 # ==========================================
@@ -218,6 +218,8 @@ def delete_message(chat_id, message_id):
             "message_id": message_id
         }
     )
+
+
 
 # ==========================================
 # پایان فایل

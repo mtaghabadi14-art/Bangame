@@ -248,12 +248,12 @@ def receive_room_code(chat_id, code):
         for player in room.players:
 
             send_message(
-                 player,
+                player,
                 "✍️ بازی اسم و فامیل آماده شد!"
             )
 
 
-    esm_famil.start(room)
+        esm_famil.start(room)
 
 
 

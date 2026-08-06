@@ -291,21 +291,27 @@ def exit_game(room_id, chat_id):
 
 def finish_round(room):
 
-    players = room.players.copy()
+    from handlers.menu import main_menu
 
-    delete_room(room.room_id)
-
-    from handlers.rooms import open_room_menu
-
-    for player in players:
+    for player in room.players:
 
         send_message(
             player,
             "🎉 دور بازی تمام شد!\n"
-            "به‌زودی امتیازدهی اضافه می‌شود."
+            "امتیازدهی به‌زودی اضافه می‌شود."
         )
 
-        open_room_menu(player)
+
+    # حذف کامل اتاق
+    delete_room(
+        room.room_id
+    )
+
+
+    # برگشت به منوی اصلی و عوض شدن دکمه‌ها
+    for player in room.players:
+
+        main_menu(player)
 
 
 # ==========================================
