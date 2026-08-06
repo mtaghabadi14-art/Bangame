@@ -177,13 +177,9 @@ def handle(room, player, text):
 
     if text == "🚪 خروج از بازی":
 
-        delete_room(
-            room.room_id
-        )
-
-        send_message(
-            player,
-            "🚪 از بازی اسم و فامیل خارج شدی."
+        exit_game(
+            room,
+            player
         )
 
         return True
@@ -254,39 +250,19 @@ def clear_answers(room):
         room.data["answers"][player] = {}
 
 
-# ==========================================
-# خروج از بازی اسم و فامیل
-# ==========================================
+def exit_game(room, player):
 
-def exit_game(room_id, chat_id):
+    from rooms.manager import leave_room
+    from handlers.menu import main_menu
 
-    from handlers.rooms import open_room_menu
-
-    if room_id not in games:
-
-        send_message(
-            chat_id,
-            "🚪 از بازی خارج شدی."
-        )
-
-        open_room_menu(chat_id)
-
-        return
-
-    games[room_id]["players"] = [
-        p for p in games[room_id]["players"]
-        if p != chat_id
-    ]
+    leave_room(player)
 
     send_message(
-        chat_id,
+        player,
         "🚪 از بازی اسم و فامیل خارج شدی."
     )
 
-    open_room_menu(chat_id)
-
-    if len(games[room_id]["players"]) == 0:
-        del games[room_id]
+    main_menu(player)
 
 
 # ==========================================
