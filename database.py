@@ -2,6 +2,7 @@ import os
 import psycopg2
 
 from utils.titles import get_title
+from rubika import send_message
 
 
 # ==========================================
@@ -322,18 +323,18 @@ def add_coins(user_id, amount):
 def add_xp(user_id, amount):
 
     conn = connect()
-
     cur = conn.cursor()
 
-    # --------------------------------------
-    # گرفتن Level و XP فعلی
-    # --------------------------------------
+    # ==========================================
+    # گرفتن اطلاعات فعلی
+    # ==========================================
 
     cur.execute(
         """
         SELECT
             level,
-            xp
+            xp,
+            title
         FROM users
         WHERE user_id=%s
         """,
@@ -351,15 +352,15 @@ def add_xp(user_id, amount):
 
         return
 
-
-    level, current_xp = data
+    old_level, current_xp, old_title = data
 
     current_xp += amount
 
+    level = old_level
 
-    # --------------------------------------
+    # ==========================================
     # بررسی Level Up
-    # --------------------------------------
+    # ==========================================
 
     level_ups = 0
 
@@ -368,26 +369,21 @@ def add_xp(user_id, amount):
         needed_xp = get_next_level_xp(level)
 
         if current_xp < needed_xp:
-
             break
 
         current_xp -= needed_xp
-
         level += 1
-
         level_ups += 1
 
+    # ==========================================
+    # رتبه جدید
+    # ==========================================
 
-    # --------------------------------------
-    # تعیین رتبه جدید
-    # --------------------------------------
+    new_title = get_title(level)
 
-    title = get_title(level)
-
-
-    # --------------------------------------
-    # ذخیره Level + XP + رتبه
-    # --------------------------------------
+    # ==========================================
+    # ذخیره اطلاعات
+    # ==========================================
 
     cur.execute(
         """
@@ -403,18 +399,42 @@ def add_xp(user_id, amount):
         (
             current_xp,
             level,
-            title,
+            new_title,
             user_id
         )
     )
 
-
     conn.commit()
 
     cur.close()
-
     conn.close()
 
+    # ==========================================
+    # پیام ارتقای Level
+    # ==========================================
+
+    if level > old_level:
+
+        send_message(
+            user_id,
+            f"🎉 Level Up!\n\n"
+            f"تبریک! به Level {level} رسیدی! ⭐\n"
+            f"✨ XP: {current_xp}/{get_next_level_xp(level)}"
+        )
+
+    # ==========================================
+    # پیام تغییر رتبه
+    # ==========================================
+
+    if new_title != old_title:
+
+        send_message(
+            user_id,
+            f"🏆 رتبه جدید!\n\n"
+            f"تبریک! رتبه‌ات ارتقا پیدا کرد! 🔥\n\n"
+            f"{new_title}\n"
+            f"⭐ Level {level}"
+        )
 
 # ==========================================
 # تغییر Level و رتبه
