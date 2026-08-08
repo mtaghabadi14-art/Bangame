@@ -37,7 +37,7 @@ add_player(player)
 
 while True:
     print("\n========================")
-    print("🎮 Bangame")
+    print("🎮 VEXON")
     print("========================")
     print(f"👤 {player.name}")
     print(f"💰 سکه: {player.coins}")

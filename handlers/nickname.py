@@ -20,7 +20,7 @@ def start(chat_id):
 
     send_message(
         chat_id,
-        "👋 به Bangame خوش اومدی!\n\n"
+        "👋 به Vexon خوش اومدی!\n\n"
         "🏷 لطفاً لقب خودت رو وارد کن."
     )
 

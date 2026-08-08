@@ -81,7 +81,7 @@ waiting_for_nickname = set()
 def home():
 
     return {
-        "status": "Bangame Online 🚀"
+        "status": "Vexon Online 🚀"
     }
 
 
@@ -276,6 +276,18 @@ async def receive_update(request: Request):
                  "ok": True
             }
 
+        elif text == "🧪 تست XP":
+
+            from database import add_xp
+
+            add_xp(chat_id, 110)
+
+            show_profile(chat_id)
+
+            return {
+                "ok": True
+            }
+    
         elif text == "🪙 کیف پول":
 
             show_wallet(chat_id)

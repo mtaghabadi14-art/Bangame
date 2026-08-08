@@ -246,9 +246,3 @@ def get_rooms():
 def room_count():
 
     return len(rooms)
-
-
-# ==========================================
-# پایان manager.py
-# Bangame Room System v2
-# ==========================================

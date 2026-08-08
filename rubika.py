@@ -6,7 +6,7 @@ from requests.adapters import HTTPAdapter
 
 
 # ==========================================
-# Bangame Rubika API v2
+# vexon Rubika API v2
 # ==========================================
 
 TOKEN = os.getenv("RUBIKA_TOKEN")
@@ -219,9 +219,3 @@ def delete_message(chat_id, message_id):
         }
     )
 
-
-
-# ==========================================
-# پایان فایل
-# Bangame Rubika API v2
-# ==========================================

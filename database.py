@@ -1,6 +1,8 @@
 import os
 import psycopg2
 
+from utils.titles import get_title
+
 
 # ==========================================
 # اتصال به PostgreSQL (Supabase)
@@ -15,6 +17,30 @@ def connect():
 
     return psycopg2.connect(
         DATABASE_URL
+    )
+
+
+# ==========================================
+# XP مورد نیاز برای Level بعدی
+# ==========================================
+
+def get_next_level_xp(level):
+
+    levels = {
+        1: 100,
+        2: 250,
+        3: 500,
+        4: 800,
+        5: 1200,
+        6: 1700,
+        7: 2500,
+        8: 3500,
+        9: 5000,
+    }
+
+    return levels.get(
+        level,
+        level * 700
     )
 
 
@@ -54,13 +80,11 @@ def create_tables():
         """
     )
 
-
     conn.commit()
 
     cur.close()
 
     conn.close()
-
 
 
 # ==========================================
@@ -72,7 +96,6 @@ def add_typing_columns():
     conn = connect()
 
     cur = conn.cursor()
-
 
     columns = [
 
@@ -103,7 +126,6 @@ def add_typing_columns():
 
     ]
 
-
     for name, dtype in columns:
 
         try:
@@ -115,18 +137,15 @@ def add_typing_columns():
                 """
             )
 
-
         except Exception:
 
             conn.rollback()
-
 
     conn.commit()
 
     cur.close()
 
     conn.close()
-
 
 
 # ==========================================
@@ -152,13 +171,11 @@ def add_user(user_id):
         )
     )
 
-
     conn.commit()
 
     cur.close()
 
     conn.close()
-
 
 
 # ==========================================
@@ -171,38 +188,33 @@ def get_user(user_id):
 
     cur = conn.cursor()
 
-
     cur.execute(
-    """
-    SELECT
-        user_id,
-        nickname,
-        title,
-        coins,
-        level,
-        xp,
-        typing_games,
-        typing_best_time,
-        typing_best_wpm
-    FROM users
-    WHERE user_id=%s
-    """,
-    (
-        user_id,
+        """
+        SELECT
+            user_id,
+            nickname,
+            title,
+            coins,
+            level,
+            xp,
+            typing_games,
+            typing_best_time,
+            typing_best_wpm
+        FROM users
+        WHERE user_id=%s
+        """,
+        (
+            user_id,
+        )
     )
-)
-
 
     user = cur.fetchone()
-
 
     cur.close()
 
     conn.close()
 
-
     return user
-
 
 
 # ==========================================
@@ -214,7 +226,6 @@ def set_nickname(user_id, nickname):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -230,14 +241,11 @@ def set_nickname(user_id, nickname):
         )
     )
 
-
     conn.commit()
-
 
     cur.close()
 
     conn.close()
-
 
 
 # ==========================================
@@ -249,7 +257,6 @@ def get_nickname(user_id):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -264,22 +271,17 @@ def get_nickname(user_id):
         )
     )
 
-
     result = cur.fetchone()
-
 
     cur.close()
 
     conn.close()
 
-
     if result:
 
         return result[0]
 
-
     return None
-
 
 
 # ==========================================
@@ -291,7 +293,6 @@ def add_coins(user_id, amount):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -307,13 +308,11 @@ def add_coins(user_id, amount):
         )
     )
 
-
     conn.commit()
 
     cur.close()
 
     conn.close()
-
 
 
 # ==========================================
@@ -326,78 +325,84 @@ def add_xp(user_id, amount):
 
     cur = conn.cursor()
 
+    # --------------------------------------
+    # گرفتن Level و XP فعلی
+    # --------------------------------------
 
     cur.execute(
         """
-        UPDATE users
-
-        SET xp = xp + %s
-
-        WHERE user_id=%s
-        """,
-        (
-            amount,
-            user_id
-        )
-    )
-
-
-    conn.commit()
-
-    cur.close()
-
-    conn.close()
-
-
-
-# ==========================================
-# تغییر Level
-# ==========================================
-
-# ==========================================
-# تغییر Level و رتبه
-# ==========================================
-
-def set_level(user_id, level):
-
-    from utils.titles import get_title
-
-
-    conn = connect()
-
-    cur = conn.cursor()
-
-
-    # تغییر لول
-    cur.execute(
-        """
-        UPDATE users
-
-        SET level=%s
-
-        WHERE user_id=%s
-        """,
-        (
+        SELECT
             level,
-            user_id
+            xp
+        FROM users
+        WHERE user_id=%s
+        """,
+        (
+            user_id,
         )
     )
 
+    data = cur.fetchone()
 
-    # گرفتن رتبه جدید
+    if not data:
+
+        cur.close()
+        conn.close()
+
+        return
+
+
+    level, current_xp = data
+
+    current_xp += amount
+
+
+    # --------------------------------------
+    # بررسی Level Up
+    # --------------------------------------
+
+    level_ups = 0
+
+    while True:
+
+        needed_xp = get_next_level_xp(level)
+
+        if current_xp < needed_xp:
+
+            break
+
+        current_xp -= needed_xp
+
+        level += 1
+
+        level_ups += 1
+
+
+    # --------------------------------------
+    # تعیین رتبه جدید
+    # --------------------------------------
+
     title = get_title(level)
 
 
-    # ذخیره رتبه جدید
+    # --------------------------------------
+    # ذخیره Level + XP + رتبه
+    # --------------------------------------
+
     cur.execute(
         """
         UPDATE users
 
-        SET title=%s
+        SET
+            xp=%s,
+            level=%s,
+            title=%s
 
         WHERE user_id=%s
         """,
         (
+            current_xp,
+            level,
             title,
             user_id
         )
@@ -406,15 +411,50 @@ def set_level(user_id, level):
 
     conn.commit()
 
+    cur.close()
+
+    conn.close()
+
+
+# ==========================================
+# تغییر Level و رتبه
+# ==========================================
+
+def set_level(user_id, level):
+
+    conn = connect()
+
+    cur = conn.cursor()
+
+    title = get_title(level)
+
+    cur.execute(
+        """
+        UPDATE users
+
+        SET
+            level=%s,
+            title=%s
+
+        WHERE user_id=%s
+        """,
+        (
+            level,
+            title,
+            user_id
+        )
+    )
+
+    conn.commit()
 
     cur.close()
 
     conn.close()
 
 
-    # ==========================================
-    # تغییر رتبه
-    # ==========================================
+# ==========================================
+# تغییر رتبه
+# ==========================================
 
 def set_title(user_id, title):
 
@@ -443,7 +483,6 @@ def set_title(user_id, title):
     conn.close()
 
 
-
 # ==========================================
 # تغییر XP
 # ==========================================
@@ -453,7 +492,6 @@ def set_xp(user_id, xp):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -469,13 +507,11 @@ def set_xp(user_id, xp):
         )
     )
 
-
     conn.commit()
 
     cur.close()
 
     conn.close()
-
 
 
 # ==========================================
@@ -492,7 +528,6 @@ def update_typing_stats(
 
     cur = conn.cursor()
 
-
     cur.execute(
         """
         UPDATE users
@@ -505,7 +540,6 @@ def update_typing_stats(
             user_id,
         )
     )
-
 
     cur.execute(
         """
@@ -522,19 +556,15 @@ def update_typing_stats(
         )
     )
 
-
     data = cur.fetchone()
-
 
     new_time_record = False
 
     new_wpm_record = False
 
-
     if data:
 
         best_time, best_wpm = data
-
 
         if best_time == 0 or time_taken < best_time:
 
@@ -554,8 +584,6 @@ def update_typing_stats(
 
             new_time_record = True
 
-
-
         if wpm > best_wpm:
 
             cur.execute(
@@ -574,14 +602,11 @@ def update_typing_stats(
 
             new_wpm_record = True
 
-
-
     conn.commit()
 
     cur.close()
 
     conn.close()
-
 
     return {
 
@@ -590,7 +615,6 @@ def update_typing_stats(
         "new_wpm_record": new_wpm_record
 
     }
-
 
 
 # ==========================================
@@ -602,7 +626,6 @@ def get_typing_stats(user_id):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -623,17 +646,13 @@ def get_typing_stats(user_id):
         )
     )
 
-
     data = cur.fetchone()
-
 
     cur.close()
 
     conn.close()
 
-
     return data
-
 
 
 # ==========================================
@@ -645,7 +664,6 @@ def get_typing_leaderboard(limit=10):
     conn = connect()
 
     cur = conn.cursor()
-
 
     cur.execute(
         """
@@ -670,13 +688,10 @@ def get_typing_leaderboard(limit=10):
         )
     )
 
-
     data = cur.fetchall()
-
 
     cur.close()
 
     conn.close()
-
 
     return data
