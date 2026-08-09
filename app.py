@@ -180,27 +180,9 @@ async def receive_update(request: Request):
 
         room = get_player_room(chat_id)
 
-        if room:
+        if room is not None:
 
             print("ROOM GAME:", room.game)
-
-        # ==============================
-        # شروع اسم و فامیل توسط میزبان
-        # ==============================
-
-        if (
-            room.game == "esm_famil"
-            and text == "▶️ شروع بازی"
-        ):
-
-            esm_handler.start_by_host(
-                room,
-                chat_id
-            )
-
-            return {
-                "ok": True
-            }
 
             if room.game == "tictactoe":
 
@@ -225,17 +207,17 @@ async def receive_update(request: Request):
                         "button_id": button_id
                     }
                 )
-    
+
                 return {
                     "ok": True
                 }
-            
+
             if room.game == "esm_famil":
 
                 esm_handler.handle(
-                    room,
-                    chat_id,
-                    text
+                   room,
+                   chat_id,
+                   text
                 )
 
                 return {
