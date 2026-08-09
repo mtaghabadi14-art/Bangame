@@ -51,6 +51,7 @@ from handlers.rooms import (
     create_rps_room,
     create_tictactoe_room,
     create_esm_famil_room,
+    start_esm_famil_room,
     request_join,
     receive_room_code,
     exit_room

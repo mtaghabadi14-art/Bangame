@@ -181,19 +181,20 @@ def show_result(room):
 
         for player, answers in room.data["answers"].items():
 
-            nickname = get_player_name(player)
-
             answer = answers.get(
                 category,
                 "❌"
             )
 
+            nickname = get_nickname(player)
+
+            if not nickname:
+                nickname = "بازیکن"
+
             text += (
                 f"👤 {nickname}: "
                 f"{answer}\n"
             )
-
-        text += "\n"
 
     # ======================================
     # امتیاز نهایی
