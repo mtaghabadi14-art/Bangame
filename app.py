@@ -184,6 +184,24 @@ async def receive_update(request: Request):
 
             print("ROOM GAME:", room.game)
 
+        # ==============================
+        # شروع اسم و فامیل توسط میزبان
+        # ==============================
+
+        if (
+            room.game == "esm_famil"
+            and text == "▶️ شروع بازی"
+        ):
+
+            esm_handler.start_by_host(
+                room,
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
             if room.game == "tictactoe":
 
                 ttt_handler.handle(

@@ -1,4 +1,5 @@
 from rubika import send_keypad
+from database import get_nickname
 
 
 # ==========================================
@@ -77,3 +78,76 @@ def create_room_menu(chat_id):
             ["برگشت به اتاق بازی"]
         ]
     )
+
+
+# ==========================================
+# Lobby اسم و فامیل
+# ==========================================
+
+def esm_lobby_menu(chat_id, room, is_host=False):
+
+    players_text = ""
+
+    for player in room.players:
+
+        nickname = get_nickname(player)
+
+        if not nickname:
+            nickname = "بازیکن"
+
+        if player == room.host:
+            players_text += f"👑 {nickname}\n"
+        else:
+            players_text += f"👤 {nickname}\n"
+
+    text = (
+        "✍️ اتاق اسم و فامیل\n\n"
+        f"🔑 کد اتاق: {room.room_id}\n\n"
+        f"👥 بازیکنان: {len(room.players)} / {room.max_players}\n\n"
+        f"{players_text}\n"
+    )
+
+    if len(room.players) < room.min_players:
+
+        text += (
+            "⏳ حداقل ۲ بازیکن برای شروع لازم است."
+        )
+
+    else:
+
+        text += (
+            "⏳ منتظر شروع بازی..."
+        )
+
+    if is_host:
+
+        if len(room.players) >= room.min_players:
+
+            send_keypad(
+                chat_id,
+                text,
+                [
+                    ["▶️ شروع بازی"],
+                    ["🚪 خروج از اتاق"]
+                ]
+            )
+
+        else:
+
+            send_keypad(
+                chat_id,
+                text,
+                [
+                    ["🚪 خروج از اتاق"]
+                ]
+            )
+
+    else:
+
+        send_keypad(
+            chat_id,
+            text,
+            [
+                ["🚪 خروج از اتاق"]
+            ]
+        )

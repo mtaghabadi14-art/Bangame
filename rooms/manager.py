@@ -11,6 +11,7 @@ from rooms.game_room import GameRoom
 rooms = {}
 
 # player_id -> room_id
+
 player_rooms = {}
 
 
@@ -23,11 +24,14 @@ def generate_room_code(length=6):
     while True:
 
         code = "".join(
-            random.choice(string.ascii_uppercase + string.digits)
+            random.choice(
+                string.ascii_uppercase + string.digits
+            )
             for _ in range(length)
         )
 
         if code not in rooms:
+
             return code
 
 
@@ -43,6 +47,7 @@ def create_room(
 ):
 
     if host in player_rooms:
+
         return None
 
     room_id = generate_room_code()
@@ -56,6 +61,7 @@ def create_room(
     )
 
     rooms[room_id] = room
+
     player_rooms[host] = room_id
 
     return room
@@ -79,9 +85,12 @@ def get_player_room(player):
     room_id = player_rooms.get(player)
 
     if room_id is None:
+
         return None
 
     return rooms.get(room_id)
+
+
 # -----------------------------
 # ورود به اتاق
 # -----------------------------
@@ -91,12 +100,22 @@ def join_room(room_id, player):
     room = rooms.get(room_id)
 
     if room is None:
+
         return None
 
+    # بازی شروع شده
+    if room.started:
+
+        return None
+
+    # بازیکن از قبل داخل یک اتاق است
     if player in player_rooms:
+
         return None
 
+    # اتاق پر است
     if len(room.players) >= room.max_players:
+
         return None
 
     room.players.append(player)
@@ -115,27 +134,42 @@ def leave_room(player):
     room = get_player_room(player)
 
     if room is None:
+
         return False
 
     if player in room.players:
+
         room.players.remove(player)
 
-    player_rooms.pop(player, None)
+    player_rooms.pop(
+        player,
+        None
+    )
 
     # اگر میزبان خارج شد
     if player == room.host:
 
         for p in room.players:
-            player_rooms.pop(p, None)
 
-        rooms.pop(room.room_id, None)
+            player_rooms.pop(
+                p,
+                None
+            )
+
+        rooms.pop(
+            room.room_id,
+            None
+        )
 
         return True
 
     # اگر اتاق خالی شد
     if len(room.players) == 0:
 
-        rooms.pop(room.room_id, None)
+        rooms.pop(
+            room.room_id,
+            None
+        )
 
     return True
 
@@ -176,33 +210,40 @@ def delete_room(room_id):
     room = rooms.get(room_id)
 
     if room is None:
+
         return False
 
+    print(
+        "DELETE ROOM:",
+        room_id
+    )
 
-    print("DELETE ROOM:", room_id)
-
-
-    # پاک کردن بازیکنان از player_rooms
     for player in room.players:
 
-        print("REMOVE PLAYER:", player)
+        print(
+            "REMOVE PLAYER:",
+            player
+        )
 
         player_rooms.pop(
             player,
             None
         )
 
-
-    # حذف خود اتاق
     rooms.pop(
         room_id,
         None
     )
 
+    print(
+        "ROOMS AFTER DELETE:",
+        rooms
+    )
 
-    print("ROOMS AFTER DELETE:", rooms)
-    print("PLAYERS AFTER DELETE:", player_rooms)
-
+    print(
+        "PLAYERS AFTER DELETE:",
+        player_rooms
+    )
 
     return True
 
@@ -214,6 +255,7 @@ def delete_room(room_id):
 def start_game(room):
 
     if not can_start(room):
+
         return False
 
     room.started = True

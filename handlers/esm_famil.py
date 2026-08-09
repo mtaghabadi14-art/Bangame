@@ -2,7 +2,10 @@ import random
 
 from rubika import send_message
 
-from rooms.manager import delete_room
+from rooms.manager import (
+    delete_room,
+    start_game
+)
 
 from handlers.esm_buttons import (
     show_categories
@@ -16,14 +19,14 @@ from handlers.esm_answers import (
 
 
 # ==========================================
-# بازی های فعال
+# بازی‌های فعال
 # ==========================================
 
 games = {}
 
 
 # ==========================================
-# دسته بندی ها
+# دسته‌بندی‌ها
 # ==========================================
 
 categories = [
@@ -76,10 +79,74 @@ letters = [
 
 
 # ==========================================
+# نمایش Lobby
+# ==========================================
+
+def show_lobby(room):
+
+    from handlers.menu import esm_lobby_menu
+
+    for player in room.players:
+
+        esm_lobby_menu(
+            player,
+            room,
+            is_host=(player == room.host)
+        )
+
+
+# ==========================================
+# شروع بازی توسط میزبان
+# ==========================================
+
+def start_by_host(room, player):
+
+    if player != room.host:
+
+        send_message(
+            player,
+            "❌ فقط میزبان می‌تواند بازی را شروع کند."
+        )
+
+        return False
+
+    if room.started:
+
+        send_message(
+            player,
+            "❌ بازی قبلاً شروع شده است."
+        )
+
+        return False
+
+    if len(room.players) < room.min_players:
+
+        send_message(
+            player,
+            f"❌ حداقل {room.min_players} بازیکن لازم است."
+        )
+
+        return False
+
+    start(room)
+
+    return True
+
+
+# ==========================================
 # شروع بازی
 # ==========================================
 
 def start(room):
+
+    if room.started:
+        return
+
+    if len(room.players) < room.min_players:
+
+        return
+
+    start_game(room)
 
     letter = random.choice(letters)
 
@@ -89,6 +156,7 @@ def start(room):
     room.data["waiting"] = {}
 
     for player in room.players:
+
         room.data["answers"][player] = {}
 
     for player in room.players:
@@ -110,6 +178,7 @@ def start(room):
 def select_category(room, player, category):
 
     if category not in categories:
+
         return False
 
     choose_category(
@@ -167,6 +236,8 @@ def get_game_data(room):
         )
 
     }
+
+
 # ==========================================
 # مدیریت پیام بازیکن
 # ==========================================
@@ -176,6 +247,17 @@ def handle(room, player, text):
     # خروج از بازی
 
     if text == "🚪 خروج از بازی":
+
+        exit_game(
+            room,
+            player
+        )
+
+        return True
+
+    # خروج از اتاق
+
+    if text == "🚪 خروج از اتاق":
 
         exit_game(
             room,
@@ -226,7 +308,7 @@ def handle(room, player, text):
 
 
 # ==========================================
-# گرفتن جواب های بازیکن
+# گرفتن جواب‌های بازیکن
 # ==========================================
 
 def get_player_answers(room, player):
@@ -238,6 +320,8 @@ def get_player_answers(room, player):
         player,
         {}
     )
+
+
 # ==========================================
 # پاک کردن جواب‌ها
 # ==========================================
@@ -247,14 +331,18 @@ def clear_answers(room):
     room.data["answers"] = {}
 
     for player in room.players:
+
         room.data["answers"][player] = {}
 
+
+# ==========================================
+# خروج از بازی
+# ==========================================
 
 def exit_game(room, player):
 
     from rooms.manager import leave_room
     from handlers.menu import room_menu
-
 
     leave_room(player)
 
@@ -282,14 +370,10 @@ def finish_round(room):
             "امتیازدهی به‌زودی اضافه می‌شود."
         )
 
-
-    # حذف کامل اتاق
     delete_room(
         room.room_id
     )
 
-
-    # برگشت به منوی اصلی و عوض شدن دکمه‌ها
     for player in room.players:
 
         room_menu(player)
@@ -306,4 +390,5 @@ def reset_game(room):
     room.data["waiting"] = {}
 
     for player in room.players:
+
         room.data["answers"][player] = {}

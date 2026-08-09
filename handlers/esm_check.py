@@ -1,5 +1,22 @@
 from rubika import send_message
 
+from database import get_nickname
+
+
+# ==========================================
+# گرفتن نام نمایشی بازیکن
+# ==========================================
+
+def get_player_name(player):
+
+    nickname = get_nickname(player)
+
+    if nickname:
+
+        return nickname
+
+    return "بازیکن"
+
 
 # ==========================================
 # بررسی یک جواب
@@ -8,15 +25,16 @@ from rubika import send_message
 def check_answer(letter, answer):
 
     if not answer:
+
         return False
 
     answer = answer.strip()
 
     if answer.startswith(letter):
+
         return True
 
     return False
-
 
 
 # ==========================================
@@ -30,9 +48,6 @@ def calculate_category_score(
 ):
 
     results = {}
-
-
-    # جواب های این دسته
 
     answers = {}
 
@@ -54,18 +69,11 @@ def calculate_category_score(
 
             answers[player] = None
 
-
-
-    # تعداد جواب های درست
-
     correct_answers = [
         answer
         for answer in answers.values()
         if answer
     ]
-
-
-    # امتیازدهی
 
     for player, answer in answers.items():
 
@@ -73,24 +81,15 @@ def calculate_category_score(
 
             results[player] = 0
 
-
         elif correct_answers.count(answer) > 1:
-
-            # جواب تکراری
 
             results[player] = 5
 
-
         else:
-
-            # جواب خاص
 
             results[player] = 20
 
-
-
     return results
-
 
 
 # ==========================================
@@ -103,12 +102,10 @@ def check_game(room):
         "letter"
     )
 
-
     players_answers = room.data.get(
         "answers",
         {}
     )
-
 
     scores = {}
 
@@ -125,13 +122,9 @@ def check_game(room):
         "🎬 فیلم یا سریال"
     ]
 
-
-
     for player in players_answers:
 
         scores[player] = 0
-
-
 
     for category in categories:
 
@@ -141,15 +134,11 @@ def check_game(room):
             category
         )
 
-
         for player, score in result.items():
 
             scores[player] += score
 
-
-
     return scores
-
 
 
 # ==========================================
@@ -160,7 +149,9 @@ def show_result(room):
 
     scores = check_game(room)
 
-    letter = room.data.get("letter")
+    letter = room.data.get(
+        "letter"
+    )
 
     categories = [
         "👤 اسم",
@@ -175,21 +166,22 @@ def show_result(room):
         "🎬 فیلم یا سریال"
     ]
 
-
     text = (
         "🎉 نتیجه اسم و فامیل\n\n"
         f"🔤 حرف انتخاب شده: {letter}\n\n"
     )
 
-
-    # نمایش جواب ها
+    # ======================================
+    # نمایش جواب‌ها
+    # ======================================
 
     for category in categories:
 
         text += f"{category}:\n"
 
-
         for player, answers in room.data["answers"].items():
+
+            nickname = get_player_name(player)
 
             answer = answers.get(
                 category,
@@ -197,27 +189,52 @@ def show_result(room):
             )
 
             text += (
-                f"👤 {player}: "
+                f"👤 {nickname}: "
                 f"{answer}\n"
             )
 
         text += "\n"
 
-
-
+    # ======================================
     # امتیاز نهایی
+    # ======================================
 
     text += "🏆 امتیاز نهایی:\n\n"
 
+    # مرتب‌سازی از بیشترین امتیاز
+    sorted_scores = sorted(
+        scores.items(),
+        key=lambda item: item[1],
+        reverse=True
+    )
 
-    for player, score in scores.items():
+    for index, (player, score) in enumerate(
+        sorted_scores,
+        start=1
+    ):
+
+        nickname = get_player_name(player)
+
+        if index == 1:
+
+            medal = "🥇"
+
+        elif index == 2:
+
+            medal = "🥈"
+
+        elif index == 3:
+
+            medal = "🥉"
+
+        else:
+
+            medal = "👤"
 
         text += (
-            f"👤 {player}\n"
+            f"{medal} {nickname}\n"
             f"⭐ {score} امتیاز\n\n"
         )
-
-
 
     for player in room.players:
 
