@@ -649,8 +649,11 @@ async def receive_update(request: Request):
 
     except Exception as e:
 
+        import traceback
+
         print("================================")
         print("ERROR:", e)
+        traceback.print_exc()
         print("================================")
 
         try:
@@ -663,7 +666,6 @@ async def receive_update(request: Request):
         except Exception:
 
             pass
-
 
     end_time = time.time()
 
