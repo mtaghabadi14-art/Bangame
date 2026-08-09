@@ -256,30 +256,23 @@ def set_nickname(user_id, nickname):
 def get_nickname(user_id):
 
     conn = connect()
-
     cur = conn.cursor()
 
     cur.execute(
         """
         SELECT nickname
-
         FROM users
-
-        WHERE user_id=%s
+        WHERE user_id = %s
         """,
-        (
-            user_id
-        )
+        (user_id,)
     )
 
     result = cur.fetchone()
 
     cur.close()
-
     conn.close()
 
     if result:
-
         return result[0]
 
     return None
