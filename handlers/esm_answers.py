@@ -16,7 +16,6 @@ def set_waiting(room, player, category):
     room.data["waiting"][player] = category
 
 
-
 # ==========================================
 # گرفتن دسته انتخاب شده
 # ==========================================
@@ -27,16 +26,13 @@ def choose_category(room, player, category):
 
         room.data["answers"][player] = {}
 
-
     old_answer = room.data["answers"][player].get(category)
-
 
     set_waiting(
         room,
         player,
         category
     )
-
 
     if old_answer:
 
@@ -55,7 +51,6 @@ def choose_category(room, player, category):
         )
 
 
-
 # ==========================================
 # ذخیره جواب
 # ==========================================
@@ -64,26 +59,20 @@ def save_answer(room, player, text):
 
     waiting = room.data["waiting"].get(player)
 
-
     if waiting is None:
 
         return False
 
-
-
     room.data["answers"][player][waiting] = text
-
 
     room.data["waiting"].pop(
         player,
         None
     )
 
-
     show_after_save(player)
 
     return True
-
 
 
 # ==========================================
@@ -92,23 +81,29 @@ def save_answer(room, player, text):
 
 def ready(room, player):
 
-    if player not in room.data["ready"]:
+    # اگر قبلاً آماده شده
+    if player in room.data["ready"]:
 
-        room.data["ready"].append(player)
+        send_message(
+            player,
+            "✅ تو قبلاً آماده شدی.\n"
+            "منتظر بقیه بازیکنان باش."
+        )
 
+        return
+
+    room.data["ready"].append(player)
 
     send_message(
         player,
-        "✅ آماده شدی.\nمنتظر بقیه بازیکنان باش."
+        "✅ آماده شدی.\n"
+        "منتظر بقیه بازیکنان باش."
     )
 
-
     # اگر همه آماده بودند
-
     if len(room.data["ready"]) == len(room.players):
 
         finish_waiting(room)
-
 
 
 # ==========================================
@@ -119,14 +114,7 @@ def finish_waiting(room):
 
     from handlers.esm_check import show_result
 
-
-    for player in room.players:
-
-        send_message(
-            player,
-            "🎉 همه آماده شدند!\n"
-            "🔎 در حال بررسی جواب‌ها..."
-        )
-
+    # نمایش مستقیم نتیجه
+    # از ارسال پیام اضافه به تمام بازیکنان جلوگیری می‌کنیم
 
     show_result(room)

@@ -40,6 +40,13 @@ def close_connection(conn):
 
 
 # ==========================================
+# Nickname Cache
+# ==========================================
+
+nickname_cache = {}
+
+
+# ==========================================
 # XP مورد نیاز برای Level بعدی
 # ==========================================
 
@@ -202,6 +209,13 @@ def add_user(user_id):
 
         conn.commit()
 
+        # اگر قبلاً Cache شده بود،
+        # برای اطمینان پاک می‌کنیم.
+        nickname_cache.pop(
+            user_id,
+            None
+        )
+
     except Exception:
 
         conn.rollback()
@@ -279,6 +293,12 @@ def set_nickname(user_id, nickname):
 
         conn.commit()
 
+        # ==========================================
+        # آپدیت Cache
+        # ==========================================
+
+        nickname_cache[user_id] = nickname
+
     except Exception:
 
         conn.rollback()
@@ -295,6 +315,19 @@ def set_nickname(user_id, nickname):
 # ==========================================
 
 def get_nickname(user_id):
+
+    # ==========================================
+    # بررسی Cache
+    # ==========================================
+
+    if user_id in nickname_cache:
+
+        return nickname_cache[user_id]
+
+
+    # ==========================================
+    # اگر Cache نبود → Query
+    # ==========================================
 
     conn = connect()
     cur = conn.cursor()
@@ -318,8 +351,16 @@ def get_nickname(user_id):
 
         if result:
 
-            return result[0]
+            nickname = result[0]
 
+            # Cache کردن نتیجه
+            nickname_cache[user_id] = nickname
+
+            return nickname
+
+        # حتی None را هم Cache نمی‌کنیم
+        # تا اگر بعداً nickname ساخته شد،
+        # Query بعدی بتواند آن را پیدا کند.
         return None
 
     finally:
@@ -377,10 +418,6 @@ def add_xp(user_id, amount):
 
     try:
 
-        # ==========================================
-        # گرفتن اطلاعات فعلی
-        # ==========================================
-
         cur.execute(
             """
             SELECT
@@ -407,10 +444,6 @@ def add_xp(user_id, amount):
 
         level = old_level
 
-        # ==========================================
-        # بررسی Level Up
-        # ==========================================
-
         while True:
 
             needed_xp = get_next_level_xp(level)
@@ -422,15 +455,7 @@ def add_xp(user_id, amount):
             current_xp -= needed_xp
             level += 1
 
-        # ==========================================
-        # رتبه جدید
-        # ==========================================
-
         new_title = get_title(level)
-
-        # ==========================================
-        # ذخیره اطلاعات
-        # ==========================================
 
         cur.execute(
             """
@@ -463,10 +488,6 @@ def add_xp(user_id, amount):
         cur.close()
         close_connection(conn)
 
-    # ==========================================
-    # پیام ارتقای Level
-    # ==========================================
-
     if level > old_level:
 
         send_message(
@@ -475,10 +496,6 @@ def add_xp(user_id, amount):
             f"تبریک! به Level {level} رسیدی! ⭐\n"
             f"✨ XP: {current_xp}/{get_next_level_xp(level)}"
         )
-
-    # ==========================================
-    # پیام تغییر رتبه
-    # ==========================================
 
     if new_title != old_title:
 
@@ -711,11 +728,8 @@ def update_typing_stats(
         close_connection(conn)
 
     return {
-
         "new_time_record": new_time_record,
-
         "new_wpm_record": new_wpm_record
-
     }
 
 
@@ -733,15 +747,10 @@ def get_typing_stats(user_id):
         cur.execute(
             """
             SELECT
-
                 typing_games,
-
                 typing_best_time,
-
                 typing_best_wpm
-
             FROM users
-
             WHERE user_id=%s
             """,
             (
@@ -771,19 +780,12 @@ def get_typing_leaderboard(limit=10):
         cur.execute(
             """
             SELECT
-
                 user_id,
-
                 typing_best_wpm,
-
                 typing_best_time
-
             FROM users
-
             WHERE typing_games > 0
-
             ORDER BY typing_best_wpm DESC
-
             LIMIT %s
             """,
             (
