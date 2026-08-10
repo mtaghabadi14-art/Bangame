@@ -15,43 +15,28 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL"
 )
 
+
 # ==========================================
 # Connection Pool
 # ==========================================
 
-_pool = None
-
-
-def _get_pool():
-
-    global _pool
-
-    if _pool is None:
-
-        _pool = ThreadedConnectionPool(
-            1,
-            10,
-            DATABASE_URL
-        )
-
-    return _pool
+db_pool = ThreadedConnectionPool(
+    minconn=1,
+    maxconn=10,
+    dsn=DATABASE_URL
+)
 
 
 def connect():
 
-    return _get_pool().getconn()
+    return db_pool.getconn()
 
 
-def release_connection(conn):
+def close_connection(conn):
 
-    if conn is not None:
+    if conn:
 
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-
-        _get_pool().putconn(conn)
+        db_pool.putconn(conn)
 
 
 # ==========================================
@@ -117,10 +102,15 @@ def create_tables():
 
         conn.commit()
 
+    except Exception:
+
+        conn.rollback()
+        raise
+
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -174,16 +164,16 @@ def add_typing_columns():
                     """
                 )
 
+                conn.commit()
+
             except Exception:
 
                 conn.rollback()
 
-        conn.commit()
-
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -212,10 +202,15 @@ def add_user(user_id):
 
         conn.commit()
 
+    except Exception:
+
+        conn.rollback()
+        raise
+
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -241,9 +236,7 @@ def get_user(user_id):
                 typing_games,
                 typing_best_time,
                 typing_best_wpm
-
             FROM users
-
             WHERE user_id=%s
             """,
             (
@@ -256,7 +249,7 @@ def get_user(user_id):
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -286,10 +279,15 @@ def set_nickname(user_id, nickname):
 
         conn.commit()
 
+    except Exception:
+
+        conn.rollback()
+        raise
+
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -327,50 +325,7 @@ def get_nickname(user_id):
     finally:
 
         cur.close()
-        release_connection(conn)
-
-
-# ==========================================
-# گرفتن لقب چند بازیکن با یک Query
-# ==========================================
-
-def get_nicknames(user_ids):
-
-    if not user_ids:
-
-        return {}
-
-    conn = connect()
-    cur = conn.cursor()
-
-    try:
-
-        cur.execute(
-            """
-            SELECT
-                user_id,
-                nickname
-
-            FROM users
-
-            WHERE user_id = ANY(%s)
-            """,
-            (
-                list(user_ids),
-            )
-        )
-
-        rows = cur.fetchall()
-
-        return {
-            user_id: nickname
-            for user_id, nickname in rows
-        }
-
-    finally:
-
-        cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -400,10 +355,15 @@ def add_coins(user_id, amount):
 
         conn.commit()
 
+    except Exception:
+
+        conn.rollback()
+        raise
+
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -417,15 +377,17 @@ def add_xp(user_id, amount):
 
     try:
 
+        # ==========================================
+        # گرفتن اطلاعات فعلی
+        # ==========================================
+
         cur.execute(
             """
             SELECT
                 level,
                 xp,
                 title
-
             FROM users
-
             WHERE user_id=%s
             """,
             (
@@ -491,10 +453,15 @@ def add_xp(user_id, amount):
 
         conn.commit()
 
+    except Exception:
+
+        conn.rollback()
+        raise
+
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
     # ==========================================
     # پیام ارتقای Level
@@ -556,10 +523,15 @@ def set_level(user_id, level):
 
         conn.commit()
 
+    except Exception:
+
+        conn.rollback()
+        raise
+
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -589,10 +561,15 @@ def set_title(user_id, title):
 
         conn.commit()
 
+    except Exception:
+
+        conn.rollback()
+        raise
+
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -622,10 +599,15 @@ def set_xp(user_id, xp):
 
         conn.commit()
 
+    except Exception:
+
+        conn.rollback()
+        raise
+
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -640,6 +622,9 @@ def update_typing_stats(
 
     conn = connect()
     cur = conn.cursor()
+
+    new_time_record = False
+    new_wpm_record = False
 
     try:
 
@@ -672,9 +657,6 @@ def update_typing_stats(
         )
 
         data = cur.fetchone()
-
-        new_time_record = False
-        new_wpm_record = False
 
         if data:
 
@@ -718,15 +700,23 @@ def update_typing_stats(
 
         conn.commit()
 
-        return {
-            "new_time_record": new_time_record,
-            "new_wpm_record": new_wpm_record
-        }
+    except Exception:
+
+        conn.rollback()
+        raise
 
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
+
+    return {
+
+        "new_time_record": new_time_record,
+
+        "new_wpm_record": new_wpm_record
+
+    }
 
 
 # ==========================================
@@ -743,8 +733,11 @@ def get_typing_stats(user_id):
         cur.execute(
             """
             SELECT
+
                 typing_games,
+
                 typing_best_time,
+
                 typing_best_wpm
 
             FROM users
@@ -761,7 +754,7 @@ def get_typing_stats(user_id):
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
 
 
 # ==========================================
@@ -778,8 +771,11 @@ def get_typing_leaderboard(limit=10):
         cur.execute(
             """
             SELECT
+
                 user_id,
+
                 typing_best_wpm,
+
                 typing_best_time
 
             FROM users
@@ -800,4 +796,4 @@ def get_typing_leaderboard(limit=10):
     finally:
 
         cur.close()
-        release_connection(conn)
+        close_connection(conn)
