@@ -6,12 +6,14 @@ from requests.adapters import HTTPAdapter
 
 
 # ==========================================
-# Vexon Rubika API v2 - Optimized
+# Vexon Rubika API
 # ==========================================
 
 TOKEN = os.getenv("RUBIKA_TOKEN")
 
-BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
+BASE_URL = (
+    f"https://botapi.rubika.ir/v3/{TOKEN}/"
+)
 
 
 # ==========================================
@@ -23,7 +25,7 @@ session = requests.Session()
 adapter = HTTPAdapter(
     pool_connections=20,
     pool_maxsize=20,
-    pool_block=False
+    max_retries=0
 )
 
 session.mount(
@@ -53,7 +55,7 @@ def call_api(method, data=None):
         response = session.post(
             BASE_URL + method,
             json=data,
-            timeout=(3, 15)
+            timeout=(2, 10)
         )
 
         response.raise_for_status()
@@ -63,31 +65,26 @@ def call_api(method, data=None):
         elapsed = time.time() - start
 
         print(
-            f"✅ {method} ({elapsed:.2f}s)"
+            f"✅ {method} "
+            f"({elapsed:.2f}s)"
         )
 
         return result
 
-
     except requests.exceptions.Timeout:
 
-        elapsed = time.time() - start
-
         print(
-            f"❌ {method} TIMEOUT ({elapsed:.2f}s)"
+            f"❌ {method} Timeout"
         )
 
         return {
             "status": "TIMEOUT"
         }
 
-
     except requests.exceptions.RequestException as e:
 
-        elapsed = time.time() - start
-
         print(
-            f"❌ {method} ERROR ({elapsed:.2f}s): {e}"
+            f"❌ {method}: {e}"
         )
 
         return {
@@ -95,13 +92,10 @@ def call_api(method, data=None):
             "error": str(e)
         }
 
-
     except Exception as e:
 
-        elapsed = time.time() - start
-
         print(
-            f"❌ {method} ERROR ({elapsed:.2f}s): {e}"
+            f"❌ {method}: {e}"
         )
 
         return {
@@ -129,7 +123,11 @@ def send_message(chat_id, text):
 # Send Keypad
 # ==========================================
 
-def send_keypad(chat_id, text, buttons):
+def send_keypad(
+    chat_id,
+    text,
+    buttons
+):
 
     rows = []
 
@@ -141,30 +139,23 @@ def send_keypad(chat_id, text, buttons):
 
             if isinstance(button, dict):
 
-                button_row.append(
-                    {
-                        "id": button["id"],
-                        "type": "Simple",
-                        "button_text": button["text"]
-                    }
-                )
+                button_row.append({
+                    "id": button["id"],
+                    "type": "Simple",
+                    "button_text": button["text"]
+                })
 
             else:
 
-                button_row.append(
-                    {
-                        "id": button,
-                        "type": "Simple",
-                        "button_text": button
-                    }
-                )
+                button_row.append({
+                    "id": button,
+                    "type": "Simple",
+                    "button_text": button
+                })
 
-        rows.append(
-            {
-                "buttons": button_row
-            }
-        )
-
+        rows.append({
+            "buttons": button_row
+        })
 
     return call_api(
         "sendMessage",
@@ -184,7 +175,10 @@ def send_keypad(chat_id, text, buttons):
 # Remove Keypad
 # ==========================================
 
-def remove_keypad(chat_id, text="✅"):
+def remove_keypad(
+    chat_id,
+    text="✅"
+):
 
     return call_api(
         "sendMessage",
@@ -226,7 +220,10 @@ def update_bot_endpoint(url):
 # Delete Message
 # ==========================================
 
-def delete_message(chat_id, message_id):
+def delete_message(
+    chat_id,
+    message_id
+):
 
     return call_api(
         "deleteMessage",
