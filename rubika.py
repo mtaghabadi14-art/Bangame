@@ -6,7 +6,7 @@ from requests.adapters import HTTPAdapter
 
 
 # ==========================================
-# vexon Rubika API v2
+# Vexon Rubika API v2 - Optimized
 # ==========================================
 
 TOKEN = os.getenv("RUBIKA_TOKEN")
@@ -20,16 +20,20 @@ BASE_URL = f"https://botapi.rubika.ir/v3/{TOKEN}/"
 
 session = requests.Session()
 
+adapter = HTTPAdapter(
+    pool_connections=20,
+    pool_maxsize=20,
+    pool_block=False
+)
+
 session.mount(
     "https://",
-    HTTPAdapter(
-        pool_connections=10,
-        pool_maxsize=10
-    )
+    adapter
 )
 
 session.headers.update({
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "Connection": "keep-alive"
 })
 
 
@@ -42,9 +46,9 @@ def call_api(method, data=None):
     if data is None:
         data = {}
 
-    try:
+    start = time.time()
 
-        start = time.time()
+    try:
 
         response = session.post(
             BASE_URL + method,
@@ -56,12 +60,10 @@ def call_api(method, data=None):
 
         result = response.json()
 
-        print("API RESULT:", result)
-
-        end = time.time()
+        elapsed = time.time() - start
 
         print(
-            f"✅ {method} ({end-start:.2f}s)"
+            f"✅ {method} ({elapsed:.2f}s)"
         )
 
         return result
@@ -69,22 +71,43 @@ def call_api(method, data=None):
 
     except requests.exceptions.Timeout:
 
-        print("❌ Timeout")
+        elapsed = time.time() - start
+
+        print(
+            f"❌ {method} TIMEOUT ({elapsed:.2f}s)"
+        )
 
         return {
             "status": "TIMEOUT"
         }
 
 
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
 
-        print("❌", e)
+        elapsed = time.time() - start
+
+        print(
+            f"❌ {method} ERROR ({elapsed:.2f}s): {e}"
+        )
 
         return {
             "status": "ERROR",
             "error": str(e)
         }
 
+
+    except Exception as e:
+
+        elapsed = time.time() - start
+
+        print(
+            f"❌ {method} ERROR ({elapsed:.2f}s): {e}"
+        )
+
+        return {
+            "status": "ERROR",
+            "error": str(e)
+        }
 
 
 # ==========================================
@@ -100,7 +123,6 @@ def send_message(chat_id, text):
             "text": text
         }
     )
-
 
 
 # ==========================================
@@ -137,7 +159,6 @@ def send_keypad(chat_id, text, buttons):
                     }
                 )
 
-
         rows.append(
             {
                 "buttons": button_row
@@ -159,7 +180,6 @@ def send_keypad(chat_id, text, buttons):
     )
 
 
-
 # ==========================================
 # Remove Keypad
 # ==========================================
@@ -176,7 +196,6 @@ def remove_keypad(chat_id, text="✅"):
     )
 
 
-
 # ==========================================
 # Get Bot Information
 # ==========================================
@@ -186,7 +205,6 @@ def get_me():
     return call_api(
         "getMe"
     )
-
 
 
 # ==========================================
@@ -204,7 +222,6 @@ def update_bot_endpoint(url):
     )
 
 
-
 # ==========================================
 # Delete Message
 # ==========================================
@@ -218,4 +235,3 @@ def delete_message(chat_id, message_id):
             "message_id": message_id
         }
     )
-
