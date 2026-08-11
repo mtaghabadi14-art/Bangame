@@ -16,10 +16,16 @@ def memory_lobby_menu(
     for player in room.players:
 
         if player == room.host:
-            players_text += f"👑 {player}\n"
+
+            players_text += (
+                f"👑 {player}\n"
+            )
 
         else:
-            players_text += f"👤 {player}\n"
+
+            players_text += (
+                f"👤 {player}\n"
+            )
 
     text = (
         "🧠 اتاق بازی حافظه\n\n"
@@ -100,7 +106,8 @@ def memory_show_message(
             "🧠 بازی حافظه شروع شد!\n\n"
             "👀 ترتیب را به خاطر بسپار:\n\n"
             f"{sequence_text}\n\n"
-            f"⏳ {seconds} ثانیه وقت داری!"
+            f"⏳ {seconds} ثانیه وقت داری!\n\n"
+            "❤️❤️❤️ هر بازیکن ۳ تلاش دارد!"
         ),
         []
     )
@@ -110,7 +117,12 @@ def memory_show_message(
 # پیام بعد از حذف ترتیب
 # ==========================================
 
-def memory_answer_message(chat_id):
+def memory_answer_message(
+    chat_id,
+    attempts=3
+):
+
+    hearts = "❤️" * attempts
 
     send_keypad(
         chat_id,
@@ -119,7 +131,10 @@ def memory_answer_message(chat_id):
             "😂 ایموجی‌ها را دقیقاً "
             "با همان ترتیب ارسال کن.\n\n"
             "⚠️ فاصله مهم نیست؛ "
-            "ترتیب مهم است."
+            "ترتیب مهم است.\n\n"
+            f"🔥 تلاش‌های باقی‌مانده: "
+            f"{attempts}\n"
+            f"{hearts}"
         ),
         [
             ["🚪 خروج از بازی"]
@@ -131,13 +146,39 @@ def memory_answer_message(chat_id):
 # پیام جواب اشتباه
 # ==========================================
 
-def wrong_answer_message(chat_id):
+def wrong_answer_message(
+    chat_id,
+    attempts
+):
+
+    hearts = "❤️" * attempts
 
     send_keypad(
         chat_id,
         (
             "❌ ترتیب اشتباه بود!\n\n"
-            "دوباره تلاش کن. 🧠"
+            f"🔥 تلاش‌های باقی‌مانده: "
+            f"{attempts}\n"
+            f"{hearts}\n\n"
+            "🧠 دوباره امتحان کن!"
+        ),
+        [
+            ["🚪 خروج از بازی"]
+        ]
+    )
+
+
+# ==========================================
+# پیام حذف شدن بازیکن
+# ==========================================
+
+def eliminated_message(chat_id):
+
+    send_keypad(
+        chat_id,
+        (
+            "❌ هر ۳ تلاشت را از دست دادی!\n\n"
+            "👋 از این دور حذف شدی."
         ),
         [
             ["🚪 خروج از بازی"]
@@ -161,6 +202,26 @@ def winner_message(
             f"🥇 {nickname}\n\n"
             "⚡ اولین نفری بود که "
             "ترتیب را درست فرستاد!"
+        ),
+        [
+            ["🚪 خروج از بازی"]
+        ]
+    )
+
+
+# ==========================================
+# پیام پایان بدون برنده
+# ==========================================
+
+def no_winner_message(chat_id):
+
+    send_keypad(
+        chat_id,
+        (
+            "💥 بازی حافظه تمام شد!\n\n"
+            "😢 همه بازیکنان هر ۳ تلاششان "
+            "را از دست دادند.\n\n"
+            "🏆 این دور برنده‌ای نداشت."
         ),
         [
             ["🚪 خروج از بازی"]

@@ -30,6 +30,13 @@ EMOJIS = [
 
 
 # ==========================================
+# تعداد تلاش هر بازیکن
+# ==========================================
+
+MAX_ATTEMPTS = 3
+
+
+# ==========================================
 # ایموجی‌های مرتب‌شده برای بررسی سریع‌تر
 # ==========================================
 
@@ -46,7 +53,10 @@ SORTED_EMOJIS = sorted(
 
 def generate_sequence():
 
-    length = random.randint(5, 10)
+    length = random.randint(
+        5,
+        10
+    )
 
     return random.sample(
         EMOJIS,
@@ -60,7 +70,9 @@ def generate_sequence():
 
 def sequence_to_text(sequence):
 
-    return " ".join(sequence)
+    return " ".join(
+        sequence
+    )
 
 
 # ==========================================
@@ -148,10 +160,95 @@ def create_game():
     sequence = generate_sequence()
 
     return {
+
         "sequence": sequence,
+
         "winner": None,
-        "finished": False
+
+        "finished": False,
+
+        # تعداد تلاش‌های باقی‌مانده هر بازیکن
+        "attempts": {},
+
+        # بازیکنانی که حذف شده‌اند
+        "eliminated": set()
+
     }
+
+
+# ==========================================
+# گرفتن تعداد تلاش باقی‌مانده
+# ==========================================
+
+def get_attempts(
+    game,
+    player
+):
+
+    attempts = game.setdefault(
+        "attempts",
+        {}
+    )
+
+    if player not in attempts:
+
+        attempts[player] = MAX_ATTEMPTS
+
+    return attempts[player]
+
+
+# ==========================================
+# ثبت تلاش بازیکن
+# ==========================================
+
+def use_attempt(
+    game,
+    player
+):
+
+    attempts = game.setdefault(
+        "attempts",
+        {}
+    )
+
+    if player not in attempts:
+
+        attempts[player] = MAX_ATTEMPTS
+
+    if attempts[player] > 0:
+
+        attempts[player] -= 1
+
+    # اگر تمام تلاش‌ها تمام شد
+    if attempts[player] <= 0:
+
+        eliminated = game.setdefault(
+            "eliminated",
+            set()
+        )
+
+        eliminated.add(
+            player
+        )
+
+    return attempts[player]
+
+
+# ==========================================
+# بررسی اینکه بازیکن حذف شده یا نه
+# ==========================================
+
+def is_eliminated(
+    game,
+    player
+):
+
+    eliminated = game.get(
+        "eliminated",
+        set()
+    )
+
+    return player in eliminated
 
 
 # ==========================================
@@ -192,16 +289,59 @@ def submit_answer(
 ):
 
     # بازی قبلاً تمام شده
-    if game.get("finished"):
+    if game.get(
+        "finished"
+    ):
 
         return {
+
             "correct": False,
+
             "winner": game.get(
                 "winner"
             ),
-            "finished": True
+
+            "finished": True,
+
+            "eliminated": False,
+
+            "attempts_left": 0
+
         }
 
+
+    # بازیکن قبلاً حذف شده
+    if is_eliminated(
+        game,
+        player
+    ):
+
+        return {
+
+            "correct": False,
+
+            "winner": None,
+
+            "finished": game.get(
+                "finished",
+                False
+            ),
+
+            "eliminated": True,
+
+            "attempts_left": 0
+
+        }
+
+
+    # تعداد تلاش فعلی
+    attempts_left = get_attempts(
+        game,
+        player
+    )
+
+
+    # بررسی جواب
     sequence = get_sequence(
         game
     )
@@ -211,31 +351,104 @@ def submit_answer(
         answer
     )
 
+
+    # ==========================================
+    # جواب صحیح
+    # ==========================================
+
+    if correct:
+
+        game["winner"] = player
+
+        game["finished"] = True
+
+        return {
+
+            "correct": True,
+
+            "winner": player,
+
+            "finished": True,
+
+            "eliminated": False,
+
+            "attempts_left": attempts_left
+
+        }
+
+
     # ==========================================
     # جواب اشتباه
     # ==========================================
 
-    if not correct:
+    attempts_left = use_attempt(
+        game,
+        player
+    )
+
+
+    # اگر تلاش‌ها تمام شده
+    if attempts_left <= 0:
 
         return {
+
             "correct": False,
+
             "winner": None,
-            "finished": False
+
+            "finished": game.get(
+                "finished",
+                False
+            ),
+
+            "eliminated": True,
+
+            "attempts_left": 0
+
         }
 
-    # ==========================================
-    # اولین جواب صحیح
-    # ==========================================
 
-    game["winner"] = player
+    # هنوز تلاش باقی مانده
+    return {
+
+        "correct": False,
+
+        "winner": None,
+
+        "finished": False,
+
+        "eliminated": False,
+
+        "attempts_left": attempts_left
+
+    }
+
+
+# ==========================================
+# بررسی اینکه همه بازیکنان حذف شده‌اند
+# ==========================================
+
+def check_all_eliminated(
+    game,
+    players
+):
+
+    if not players:
+
+        return False
+
+    for player in players:
+
+        if not is_eliminated(
+            game,
+            player
+        ):
+
+            return False
 
     game["finished"] = True
 
-    return {
-        "correct": True,
-        "winner": player,
-        "finished": True
-    }
+    return True
 
 
 # ==========================================

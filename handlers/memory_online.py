@@ -7,10 +7,19 @@ from rubika import (
 
 from handlers.menu import room_menu
 
+from handlers.memory_online_buttons import (
+    memory_answer_message,
+    wrong_answer_message,
+    eliminated_message,
+    winner_message,
+    no_winner_message
+)
+
 from games.memory_online import (
     create_game,
     get_sequence_text,
-    submit_answer
+    submit_answer,
+    check_all_eliminated
 )
 
 from rooms.manager import (
@@ -72,7 +81,6 @@ def start_by_host(room, player):
 
 def start(room):
 
-    # جلوگیری از شروع دوباره
     if not room.started:
 
         return
@@ -94,7 +102,8 @@ def start(room):
         "🧠 بازی حافظه شروع شد!\n\n"
         "👀 ترتیب زیر را خوب به خاطر بسپار:\n\n"
         f"{sequence_text}\n\n"
-        f"⏳ فقط {MEMORY_SHOW_TIME} ثانیه وقت داری!"
+        f"⏳ فقط {MEMORY_SHOW_TIME} ثانیه وقت داری!\n"
+        "❤️❤️❤️ هر بازیکن ۳ تلاش دارد!"
     )
 
     # ارسال ترتیب به همه بازیکنان
@@ -125,7 +134,7 @@ def start(room):
                     "memory_message_ids"
                 ][player] = message_id
 
-    # بعد از چند ثانیه وارد مرحله پاسخ شو
+    # تایمر حذف ترتیب
     timer = threading.Timer(
         MEMORY_SHOW_TIME,
         hide_sequence,
@@ -143,7 +152,6 @@ def start(room):
 
 def hide_sequence(room):
 
-    # اگر بازی دیگر وجود ندارد
     if room.data.get(
         "memory_game"
     ) is None:
@@ -154,7 +162,6 @@ def hide_sequence(room):
         "memory_game"
     )
 
-    # اگر بازی تمام شده
     if game.get("finished"):
 
         return
@@ -164,7 +171,7 @@ def hide_sequence(room):
         {}
     )
 
-    # حذف پیام برای هر بازیکن
+    # حذف پیام ترتیب برای هر بازیکن
     for player, message_id in message_ids.items():
 
         try:
@@ -183,15 +190,12 @@ def hide_sequence(room):
 
     room.data["memory_waiting"] = True
 
-    # پیام جدید برای پاسخ
+    # پیام پاسخ
     for player in room.players:
 
-        send_message(
+        memory_answer_message(
             player,
-            "🧠 حالا نوبت توئه!\n\n"
-            "😂 ترتیب ایموجی‌ها را دقیقاً "
-            "همان‌طور که دیدی بفرست.\n\n"
-            "⚠️ فاصله مهم نیست؛ ترتیب مهم است!"
+            attempts=3
         )
 
 
@@ -221,46 +225,75 @@ def handle_answer(room, player, text):
         text
     )
 
-    # ==========================================
-    # جواب اشتباه
-    # ==========================================
-
-    if not result["correct"]:
-
-        if not result["finished"]:
-
-            send_message(
-                player,
-                "❌ ترتیب اشتباه بود!\n"
-                "دوباره تلاش کن."
-            )
-
-        return True
 
     # ==========================================
     # جواب صحیح
     # ==========================================
 
-    room.data["memory_waiting"] = False
+    if result["correct"]:
 
-    winner = result["winner"]
+        room.data["memory_waiting"] = False
 
-    winner_text = (
-        "🏆 برنده بازی حافظه!\n\n"
-        f"🎉 بازیکن برنده: {winner}\n\n"
-        "⚡ اولین نفری بود که ترتیب را درست فرستاد!"
-    )
+        winner = result["winner"]
 
-    # اعلام برنده به همه
-    for player_id in room.players:
+        for player_id in room.players:
 
-        send_message(
-            player_id,
-            winner_text
+            winner_message(
+                player_id,
+                winner
+            )
+
+        # پایان بازی
+        room.started = False
+
+        return True
+
+
+    # ==========================================
+    # بازیکن حذف شده
+    # ==========================================
+
+    if result["eliminated"]:
+
+        eliminated_message(
+            player
         )
 
-    # پایان وضعیت بازی
-    room.started = False
+        # بررسی حذف شدن همه بازیکنان
+        all_eliminated = check_all_eliminated(
+            game,
+            room.players
+        )
+
+        if all_eliminated:
+
+            room.data[
+                "memory_waiting"
+            ] = False
+
+            for player_id in room.players:
+
+                no_winner_message(
+                    player_id
+                )
+
+            room.started = False
+
+        return True
+
+
+    # ==========================================
+    # جواب اشتباه ولی تلاش باقی مانده
+    # ==========================================
+
+    attempts_left = result[
+        "attempts_left"
+    ]
+
+    wrong_answer_message(
+        player,
+        attempts_left
+    )
 
     return True
 
@@ -289,7 +322,7 @@ def exit_game(room, player):
         player
     )
 
-    # اگر اتاق هنوز وجود دارد
+    # اطلاع به بازیکنان باقی‌مانده
     if room.players:
 
         for player_id in room.players:
@@ -308,10 +341,16 @@ def exit_game(room, player):
 
 def end_game(room):
 
-    room.data["memory_waiting"] = False
+    room.data[
+        "memory_waiting"
+    ] = False
 
-    room.data["memory_game"] = None
+    room.data[
+        "memory_game"
+    ] = None
 
-    room.data["memory_message_ids"] = {}
+    room.data[
+        "memory_message_ids"
+    ] = {}
 
     room.started = False
