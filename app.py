@@ -433,7 +433,7 @@ async def receive_update(request: Request):
         # اتاق بازی
         # ==========================================
 
-        elif text == "🏠 اتاق بازی":
+        elif text == "🎮☕ کافه بازی 🎉":
 
             open_room_menu(
                 chat_id
