@@ -6,7 +6,6 @@ from psycopg2.pool import ThreadedConnectionPool
 from utils.titles import get_title
 from rubika import send_message
 
-
 # ==========================================
 # اتصال به PostgreSQL (Supabase)
 # ==========================================
