@@ -51,6 +51,7 @@ from handlers.rooms import (
     create_rps_room,
     create_tictactoe_room,
     create_esm_famil_room,
+    create_memory_online_room,
     request_join,
     receive_room_code,
     exit_room
@@ -59,7 +60,8 @@ from handlers.rooms import (
 from handlers import (
     tictactoe as ttt_handler,
     rps as rps_handler,
-    esm_famil as esm_handler
+    esm_famil as esm_handler,
+    memory_online as memory_online_handler
 )
 
 from rooms.manager import get_player_room
@@ -234,7 +236,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-                # ==========================================
+        # ==========================================
         # بازی‌های آنلاین
         # ==========================================
 
@@ -287,6 +289,48 @@ async def receive_update(request: Request):
             if room.game == "esm_famil":
 
                 esm_handler.handle(
+                    room,
+                    chat_id,
+                    text
+                )
+
+                return {
+                    "ok": True
+                }
+
+
+            # ==========================================
+            # حافظه آنلاین
+            # ==========================================
+
+            if room.game == "memory_online":
+
+                # شروع بازی توسط میزبان
+                if text == "▶️ شروع بازی":
+
+                    memory_online_handler.start_by_host(
+                        room,
+                        chat_id
+                    )
+
+                    return {
+                       "ok": True
+                    }
+
+                # خروج از بازی
+                if text == "🚪 خروج از بازی":
+
+                    memory_online_handler.exit_game(
+                        room,
+                        chat_id
+                    )
+
+                    return {
+                        "ok": True
+                    }
+
+                 # جواب ایموجی
+                memory_online_handler.handle_answer(
                     room,
                     chat_id,
                     text
@@ -431,7 +475,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-                # ==========================================
+        # ==========================================
         # برگشت
         # ==========================================
 
@@ -497,6 +541,17 @@ async def receive_update(request: Request):
         elif text == "✍️ اسم و فامیل":
 
             create_esm_famil_room(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
+        elif text == "🧠 حافظه آنلاین":
+
+            create_memory_online_room(
                 chat_id
             )
 

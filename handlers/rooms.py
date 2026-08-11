@@ -9,6 +9,7 @@ from handlers.menu import (
 from handlers import tictactoe
 from handlers import rps
 from handlers import esm_famil
+from handlers.memory_online_buttons import memory_lobby_menu
 
 from rooms.manager import (
     create_room,
@@ -131,6 +132,31 @@ def create_esm_famil_room(chat_id):
     )
 
 
+def create_memory_online_room(chat_id):
+
+    room = create_room(
+        game="memory_online",
+        host=chat_id,
+        min_players=2,
+        max_players=8
+    )
+
+    if room is None:
+
+        send_message(
+            chat_id,
+            "❌ ابتدا از اتاق فعلی خارج شو."
+        )
+
+        return
+
+    memory_lobby_menu(
+        chat_id,
+        room,
+        is_host=True
+    )
+
+
 # ==========================================
 # درخواست ورود به اتاق
 # ==========================================
@@ -182,6 +208,8 @@ def receive_room_code(chat_id, code):
 
         return True
 
+
+
     # ==========================================
     # اسم و فامیل → ورود به Lobby
     # ==========================================
@@ -191,6 +219,23 @@ def receive_room_code(chat_id, code):
         from handlers.esm_famil import show_lobby
 
         show_lobby(room)
+
+        return True
+
+
+    # ==========================================
+    # حافظه آنلاین → ورود به Lobby
+    # ==========================================
+
+    if room.game == "memory_online":
+
+        for player in room.players:
+
+            memory_lobby_menu(
+                player,
+                room,
+                is_host=(player == room.host)
+            )
 
         return True
 
