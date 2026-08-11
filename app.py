@@ -164,7 +164,6 @@ async def receive_update(request: Request):
             "text",
             ""
         ).strip()
-
         button_id = (
             msg.get(
                 "aux_data",
@@ -236,6 +235,8 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
+
         # ==========================================
         # بازی‌های آنلاین
         # ==========================================
@@ -248,7 +249,7 @@ async def receive_update(request: Request):
             # دوز
             # ==========================================
 
-            if room.game == "tictactoe":
+            if room.game == "tictactoe" and room.started:
 
                 ttt_handler.handle(
                     room,
@@ -267,7 +268,7 @@ async def receive_update(request: Request):
             # سنگ کاغذ قیچی
             # ==========================================
 
-            if room.game == "rps":
+            if room.game == "rps" and room.started:
 
                 rps_handler.handle(
                     room,
@@ -308,16 +309,16 @@ async def receive_update(request: Request):
                 # شروع بازی توسط میزبان
                 if text == "▶️ شروع بازی":
 
-                    memory_online_handler.start_by_host(
-                        room,
-                        chat_id
-                    )
+                   memory_online_handler.start_by_host(
+                       room,
+                       chat_id
+                   )
 
-                    return {
+                   return {
                        "ok": True
                     }
 
-                # خروج از بازی
+                # خروج از اتاق
                 if text == "🚪 خروج از بازی":
 
                     memory_online_handler.exit_game(
@@ -329,17 +330,18 @@ async def receive_update(request: Request):
                         "ok": True
                     }
 
-                 # جواب ایموجی
-                memory_online_handler.handle_answer(
-                    room,
-                    chat_id,
-                    text
-                )
+                 # فقط وقتی بازی واقعاً در حال اجراست
+                if room.started:
 
-                return {
-                    "ok": True
-                }
+                    memory_online_handler.handle_answer(
+                        room,
+                        chat_id,
+                        text
+                    )
 
+                    return {
+                        "ok": True
+                    }
 
         # ==========================================
         # /start
