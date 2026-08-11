@@ -65,8 +65,9 @@ from handlers import (
 from rooms.manager import get_player_room
 
 
-print("########## APP.PY LOADED ##########")
-
+# ==========================================
+# APP
+# ==========================================
 
 app = FastAPI()
 
@@ -86,6 +87,29 @@ add_typing_columns()
 states = {}
 
 waiting_for_nickname = set()
+
+
+# ==========================================
+# Cache کاربران
+# ==========================================
+#
+# بعد از اولین Query:
+#
+# user_cache[chat_id] = True
+#
+# یعنی کاربر قبلاً در دیتابیس بررسی شده.
+#
+# nickname_cache[chat_id] = True
+#
+# یعنی کاربر لقب دارد.
+#
+# این باعث می‌شود برای هر پیام دوباره
+# get_user() اجرا نشود.
+# ==========================================
+
+user_cache = set()
+
+nickname_cache = set()
 
 
 # ==========================================
@@ -119,10 +143,6 @@ async def receive_update(request: Request):
 
         data = await request.json()
 
-        print("\n========== UPDATE ==========")
-        print(data)
-        print("============================\n")
-
         update = data.get(
             "update",
             {}
@@ -144,34 +164,32 @@ async def receive_update(request: Request):
         ).strip()
 
         button_id = (
-            msg.get("aux_data", {})
-            .get("button_id")
+            msg.get(
+                "aux_data",
+                {}
+            ).get("button_id")
         )
 
-        print("TEXT:", text)
-        print("BUTTON_ID:", button_id)
-
-        print("TEXT repr:", repr(text))
-        print("BUTTON repr:", repr(button_id))
-
 
         # ==========================================
-        # گرفتن User فقط یک بار
+        # بررسی کاربر
         # ==========================================
 
-        user = get_user(chat_id)
-
-        if not user:
-
-            add_user(chat_id)
+        if chat_id not in user_cache:
 
             user = get_user(chat_id)
 
+            if not user:
 
-        print("========== DEBUG ==========")
-        print("USER FROM DB:", user)
-        print("NICK WAITING:", nickname.waiting)
-        print("===========================")
+                add_user(chat_id)
+
+                user = get_user(chat_id)
+
+            user_cache.add(chat_id)
+
+            if user and user[1]:
+
+                nickname_cache.add(chat_id)
 
 
         # ==========================================
@@ -180,10 +198,8 @@ async def receive_update(request: Request):
 
         if (
             chat_id not in nickname.waiting
-            and not user[1]
+            and chat_id not in nickname_cache
         ):
-
-            print("➡️ START NICKNAME FLOW")
 
             nickname.start(chat_id)
 
@@ -192,12 +208,14 @@ async def receive_update(request: Request):
             }
 
 
-        elif chat_id in nickname.waiting:
+        if chat_id in nickname.waiting:
 
             nickname.save(
                 chat_id,
                 text
             )
+
+            nickname_cache.add(chat_id)
 
             return {
                 "ok": True
@@ -216,21 +234,13 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-
-        # ==========================================
+                # ==========================================
         # بازی‌های آنلاین
         # ==========================================
 
         room = get_player_room(chat_id)
 
         if room:
-
-            print(
-                "ROOM GAME:",
-                room.game
-            )
-
 
             # ==========================================
             # دوز
@@ -295,10 +305,6 @@ async def receive_update(request: Request):
             text == "/start"
             or text.endswith("/start")
         ):
-
-            print(
-                "➡️ START MAIN MENU FLOW"
-            )
 
             states.pop(
                 chat_id,
@@ -425,9 +431,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-
-        # ==========================================
+                # ==========================================
         # برگشت
         # ==========================================
 
@@ -574,9 +578,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-
-        # ==========================================
+                # ==========================================
         # بازی حافظه
         # ==========================================
 
@@ -696,6 +698,7 @@ async def receive_update(request: Request):
                     "ok": True
                 }
 
+
             guess_check(
                 states,
                 chat_id,
@@ -705,9 +708,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-
-        # ==========================================
+                # ==========================================
         # تاس
         # ==========================================
 
@@ -814,8 +815,6 @@ async def receive_update(request: Request):
     return {
         "ok": True
     }
-
-
 # ==========================================
 # Run Server
 # ==========================================
@@ -828,5 +827,5 @@ if __name__ == "__main__":
         "app:app",
         host="0.0.0.0",
         port=8000,
-        reload=True
+        reload=False
     )
