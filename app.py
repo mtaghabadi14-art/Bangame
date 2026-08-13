@@ -64,6 +64,8 @@ from handlers import (
     memory_online as memory_online_handler
 )
 
+from handlers import minesweeper as minesweeper_handler
+
 from rooms.manager import get_player_room
 
 
@@ -170,6 +172,48 @@ async def receive_update(request: Request):
                 {}
             ).get("button_id")
         )
+
+
+        # ==========================================
+        # ماین‌یاب
+        # ==========================================
+
+        if (
+           chat_id in minesweeper_handler.active_games
+           and button_id
+        ):
+
+           if button_id.startswith("mine_"):
+
+               parts = button_id.split("_")
+
+               if len(parts) == 3:
+
+                   row = int(parts[1])
+                   col = int(parts[2])
+
+                   minesweeper_handler.handle_cell(
+                       chat_id,
+                       row,
+                       col
+                   )
+
+                   return {
+                       "ok": True
+                   }
+
+           if button_id.startswith(
+               "minesweeper_"
+           ):
+
+               minesweeper_handler.handle_control(
+                   chat_id,
+                   button_id
+               )
+
+               return {
+                   "ok": True
+               }
 
 
         # ==========================================
@@ -554,6 +598,16 @@ async def receive_update(request: Request):
         elif text == "🧠 حافظه آنلاین":
 
             create_memory_online_room(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+        elif text == "💣 مین‌روب":
+
+            minesweeper_handler.start(
                 chat_id
             )
 

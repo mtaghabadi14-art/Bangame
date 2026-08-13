@@ -120,7 +120,7 @@ def send_message(chat_id, text):
 
 
 # ==========================================
-# Send Keypad
+# Send Chat Keypad
 # ==========================================
 
 def send_keypad(
@@ -166,6 +166,46 @@ def send_keypad(
             "chat_keypad": {
                 "rows": rows,
                 "resize_keyboard": True
+            }
+        }
+    )
+
+
+# ==========================================
+# Send Inline Keypad
+# ==========================================
+
+def send_inline_keypad(
+    chat_id,
+    text,
+    buttons
+):
+
+    rows = []
+
+    for row in buttons:
+
+        button_row = []
+
+        for button in row:
+
+            button_row.append({
+                "id": button["id"],
+                "type": "Simple",
+                "button_text": button["text"]
+            })
+
+        rows.append({
+            "buttons": button_row
+        })
+
+    return call_api(
+        "sendMessage",
+        {
+            "chat_id": chat_id,
+            "text": text,
+            "inline_keypad": {
+                "rows": rows
             }
         }
     )
