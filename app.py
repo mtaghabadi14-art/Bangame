@@ -133,6 +133,11 @@ async def receive_update(request: Request):
 
         data = await request.json()
 
+        print("================================")
+        print("📩 RAW UPDATE:")
+        print(data)
+        print("================================")
+
         update = data.get(
             "update",
             {}
