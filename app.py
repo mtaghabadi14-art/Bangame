@@ -153,11 +153,15 @@ async def receive_update(request: Request):
             ""
         ).strip()
 
-        button_id = (
-            msg.get(
-                "aux_data",
-                {}
-            ).get("button_id")
+        aux_data = msg.get("aux_data") or {}
+
+        button_id = aux_data.get("button_id")
+
+        print(
+            "🔘 BUTTON:",
+            button_id,
+            "| TEXT:",
+            text
         )
 
 
