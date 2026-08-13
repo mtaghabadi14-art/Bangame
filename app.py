@@ -10,6 +10,8 @@ from handlers import reaction
 from handlers import reaction as reaction_handler
 from handlers import nickname
 
+from handlers import minesweeper as minesweeper_handler
+
 from handlers.menu import (
     main_menu,
     games_menu
@@ -64,8 +66,6 @@ from handlers import (
     memory_online as memory_online_handler
 )
 
-from handlers import minesweeper as minesweeper_handler
-
 from rooms.manager import get_player_room
 
 
@@ -95,20 +95,6 @@ waiting_for_nickname = set()
 
 # ==========================================
 # Cache کاربران
-# ==========================================
-#
-# بعد از اولین Query:
-#
-# user_cache[chat_id] = True
-#
-# یعنی کاربر قبلاً در دیتابیس بررسی شده.
-#
-# nickname_cache[chat_id] = True
-#
-# یعنی کاربر لقب دارد.
-#
-# این باعث می‌شود برای هر پیام دوباره
-# get_user() اجرا نشود.
 # ==========================================
 
 user_cache = set()
@@ -166,54 +152,13 @@ async def receive_update(request: Request):
             "text",
             ""
         ).strip()
+
         button_id = (
             msg.get(
                 "aux_data",
                 {}
             ).get("button_id")
         )
-
-
-        # ==========================================
-        # ماین‌یاب
-        # ==========================================
-
-        if (
-           chat_id in minesweeper_handler.active_games
-           and button_id
-        ):
-
-           if button_id.startswith("mine_"):
-
-               parts = button_id.split("_")
-
-               if len(parts) == 3:
-
-                   row = int(parts[1])
-                   col = int(parts[2])
-
-                   minesweeper_handler.handle_cell(
-                       chat_id,
-                       row,
-                       col
-                   )
-
-                   return {
-                       "ok": True
-                   }
-
-           if button_id.startswith(
-               "minesweeper_"
-           ):
-
-               minesweeper_handler.handle_control(
-                   chat_id,
-                   button_id
-               )
-
-               return {
-                   "ok": True
-               }
 
 
         # ==========================================
@@ -265,6 +210,63 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
+
+        # ==========================================
+        # ماین‌روب
+        # دکمه‌های Inline + خانه‌های بازی
+        # ==========================================
+
+        if chat_id in minesweeper_handler.active_games:
+
+            # --------------------------------------
+            # دکمه‌های کنترل Inline
+            # --------------------------------------
+
+            if button_id and button_id.startswith(
+                "minesweeper_"
+            ):
+
+                minesweeper_handler.handle_control(
+                    chat_id,
+                    button_id
+                )
+
+                return {
+                    "ok": True
+                }
+
+
+            # --------------------------------------
+            # دکمه‌های خانه‌های صفحه
+            # --------------------------------------
+
+            if button_id and button_id.startswith(
+                "mine_"
+            ):
+
+                parts = button_id.split("_")
+
+                if len(parts) == 3:
+
+                    try:
+
+                        row = int(parts[1])
+                        col = int(parts[2])
+
+                        minesweeper_handler.handle_cell(
+                            chat_id,
+                            row,
+                            col
+                        )
+
+                    except ValueError:
+
+                        pass
+
+                return {
+                    "ok": True
+                }
 
 
         # ==========================================
@@ -350,19 +352,18 @@ async def receive_update(request: Request):
 
             if room.game == "memory_online":
 
-                # شروع بازی توسط میزبان
                 if text == "▶️ شروع بازی":
 
-                   memory_online_handler.start_by_host(
-                       room,
-                       chat_id
-                   )
+                    memory_online_handler.start_by_host(
+                        room,
+                        chat_id
+                    )
 
-                   return {
-                       "ok": True
+                    return {
+                        "ok": True
                     }
 
-                # خروج از اتاق
+
                 if text == "🚪 خروج از بازی":
 
                     memory_online_handler.exit_game(
@@ -374,7 +375,7 @@ async def receive_update(request: Request):
                         "ok": True
                     }
 
-                 # فقط وقتی بازی واقعاً در حال اجراست
+
                 if room.started:
 
                     memory_online_handler.handle_answer(
@@ -386,6 +387,7 @@ async def receive_update(request: Request):
                     return {
                         "ok": True
                     }
+
 
         # ==========================================
         # /start
@@ -419,16 +421,24 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
+                # ==========================================
+        # پروفایل
+        # ==========================================
 
         elif text == "👤 پروفایل":
 
-            show_profile(chat_id)
+            show_profile(
+                chat_id
+            )
 
             return {
                 "ok": True
             }
 
+
+        # ==========================================
+        # تغییر لقب
+        # ==========================================
 
         elif text == "✏️ تغییر لقب":
 
@@ -441,6 +451,10 @@ async def receive_update(request: Request):
             }
 
 
+        # ==========================================
+        # تست XP
+        # ==========================================
+
         elif text == "🧪 تست XP":
 
             from database import add_xp
@@ -450,25 +464,9 @@ async def receive_update(request: Request):
                 110
             )
 
-            show_profile(chat_id)
-
-            return {
-                "ok": True
-            }
-
-
-        elif text == "🪙 کیف پول":
-
-            show_wallet(chat_id)
-
-            return {
-                "ok": True
-            }
-
-
-        elif text == "🎁 جایزه روزانه":
-
-            daily(chat_id)
+            show_profile(
+                chat_id
+            )
 
             return {
                 "ok": True
@@ -476,7 +474,37 @@ async def receive_update(request: Request):
 
 
         # ==========================================
-        # اتاق بازی
+        # کیف پول
+        # ==========================================
+
+        elif text == "🪙 کیف پول":
+
+            show_wallet(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
+        # ==========================================
+        # جایزه روزانه
+        # ==========================================
+
+        elif text == "🎁 جایزه روزانه":
+
+            daily(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
+        # ==========================================
+        # کافه بازی
         # ==========================================
 
         elif text == "🎮☕ کافه بازی 🎉":
@@ -490,6 +518,10 @@ async def receive_update(request: Request):
             }
 
 
+        # ==========================================
+        # ساخت اتاق
+        # ==========================================
+
         elif text == "➕ ساخت اتاق":
 
             open_create_room(
@@ -500,6 +532,10 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+
+        # ==========================================
+        # ورود به اتاق
+        # ==========================================
 
         elif text == "🚪 ورود به اتاق":
 
@@ -512,6 +548,10 @@ async def receive_update(request: Request):
             }
 
 
+        # ==========================================
+        # خروج از اتاق
+        # ==========================================
+
         elif text == "🚪 خروج از اتاق":
 
             exit_room(
@@ -521,6 +561,8 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
+
         # ==========================================
         # برگشت
         # ==========================================
@@ -559,7 +601,7 @@ async def receive_update(request: Request):
 
 
         # ==========================================
-        # ساخت اتاق
+        # ساخت اتاق سنگ کاغذ قیچی
         # ==========================================
 
         elif text == "✂️ سنگ کاغذ قیچی":
@@ -573,6 +615,10 @@ async def receive_update(request: Request):
             }
 
 
+        # ==========================================
+        # ساخت اتاق دوز
+        # ==========================================
+
         elif text == "⭕ دوز":
 
             create_tictactoe_room(
@@ -583,6 +629,10 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+
+        # ==========================================
+        # ساخت اتاق اسم و فامیل
+        # ==========================================
 
         elif text == "✍️ اسم و فامیل":
 
@@ -595,6 +645,10 @@ async def receive_update(request: Request):
             }
 
 
+        # ==========================================
+        # ساخت اتاق حافظه آنلاین
+        # ==========================================
+
         elif text == "🧠 حافظه آنلاین":
 
             create_memory_online_room(
@@ -604,6 +658,11 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
+
+
+        # ==========================================
+        # مین‌روب
+        # ==========================================
 
         elif text == "💣 مین‌روب":
 
@@ -689,7 +748,9 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-                # ==========================================
+
+
+        # ==========================================
         # بازی حافظه
         # ==========================================
 
@@ -717,9 +778,7 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-
-
-        # ==========================================
+                # ==========================================
         # کامل کردن کلمه
         # ==========================================
 
@@ -809,7 +868,6 @@ async def receive_update(request: Request):
                     "ok": True
                 }
 
-
             guess_check(
                 states,
                 chat_id,
@@ -819,7 +877,9 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-                # ==========================================
+
+
+        # ==========================================
         # تاس
         # ==========================================
 
@@ -898,7 +958,6 @@ async def receive_update(request: Request):
             "================================"
         )
 
-
         try:
 
             send_message(
@@ -922,10 +981,11 @@ async def receive_update(request: Request):
         f"{round(end_time - start_time, 3)} sec"
     )
 
-
     return {
         "ok": True
     }
+
+
 # ==========================================
 # Run Server
 # ==========================================
