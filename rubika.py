@@ -69,6 +69,21 @@ def call_api(method, data=None):
             f"({elapsed:.2f}s)"
         )
 
+        # برای پیدا کردن خطاهای API
+        if isinstance(result, dict):
+
+            status = result.get("status")
+
+            if status != "OK":
+
+                print(
+                    f"⚠️ API STATUS: {status}"
+                )
+
+                print(
+                    f"⚠️ API RESULT: {result}"
+                )
+
         return result
 
     except requests.exceptions.Timeout:
@@ -108,7 +123,10 @@ def call_api(method, data=None):
 # Send Message
 # ==========================================
 
-def send_message(chat_id, text):
+def send_message(
+    chat_id,
+    text
+):
 
     return call_api(
         "sendMessage",
@@ -117,6 +135,60 @@ def send_message(chat_id, text):
             "text": text
         }
     )
+
+
+# ==========================================
+# ساخت یک دکمه
+# ==========================================
+
+def _make_button(button):
+
+    if isinstance(button, dict):
+
+        button_id = str(
+            button.get("id", "")
+        )
+
+        button_text = str(
+            button.get("text", "")
+        )
+
+    else:
+
+        button_id = str(button)
+
+        button_text = str(button)
+
+    return {
+        "id": button_id,
+        "type": "Simple",
+        "button_text": button_text
+    }
+
+
+# ==========================================
+# ساخت Rows
+# ==========================================
+
+def _build_rows(buttons):
+
+    rows = []
+
+    for row in buttons:
+
+        button_row = []
+
+        for button in row:
+
+            button_row.append(
+                _make_button(button)
+            )
+
+        rows.append({
+            "buttons": button_row
+        })
+
+    return rows
 
 
 # ==========================================
@@ -129,45 +201,30 @@ def send_keypad(
     buttons
 ):
 
-    rows = []
+    rows = _build_rows(
+        buttons
+    )
 
-    for row in buttons:
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
 
-        button_row = []
+        "chat_keypad_type": "New",
 
-        for button in row:
+        "chat_keypad": {
+            "rows": rows,
+            "resize_keyboard": True
+        }
+    }
 
-            if isinstance(button, dict):
-
-                button_row.append({
-                    "id": button["id"],
-                    "type": "Simple",
-                    "button_text": button["text"]
-                })
-
-            else:
-
-                button_row.append({
-                    "id": button,
-                    "type": "Simple",
-                    "button_text": button
-                })
-
-        rows.append({
-            "buttons": button_row
-        })
+    print(
+        "⌨️ CHAT KEYPAD:",
+        payload
+    )
 
     return call_api(
         "sendMessage",
-        {
-            "chat_id": chat_id,
-            "text": text,
-            "chat_keypad_type": "New",
-            "chat_keypad": {
-                "rows": rows,
-                "resize_keyboard": True
-            }
-        }
+        payload
     )
 
 
@@ -181,38 +238,32 @@ def send_inline_keypad(
     buttons
 ):
 
-    rows = []
+    rows = _build_rows(
+        buttons
+    )
 
-    for row in buttons:
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
 
-        button_row = []
+        "inline_keypad": {
+            "rows": rows
+        }
+    }
 
-        for button in row:
-
-            button_row.append({
-                "id": button["id"],
-                "type": "Simple",
-                "button_text": button["text"]
-            })
-
-        rows.append({
-            "buttons": button_row
-        })
+    print(
+        "🔘 INLINE KEYPAD:",
+        payload
+    )
 
     return call_api(
         "sendMessage",
-        {
-            "chat_id": chat_id,
-            "text": text,
-            "inline_keypad": {
-                "rows": rows
-            }
-        }
+        payload
     )
 
 
 # ==========================================
-# Remove Keypad
+# Remove Chat Keypad
 # ==========================================
 
 def remove_keypad(
@@ -245,7 +296,9 @@ def get_me():
 # Update Webhook
 # ==========================================
 
-def update_bot_endpoint(url):
+def update_bot_endpoint(
+    url
+):
 
     return call_api(
         "updateBotEndpoints",
