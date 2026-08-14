@@ -94,7 +94,7 @@ def call_api(
     except requests.exceptions.RequestException as e:
 
         print(
-            f"❌ {method} → ERROR"
+            f"❌ {method} → ERROR: {e}"
         )
 
         return {
@@ -105,7 +105,7 @@ def call_api(
     except Exception as e:
 
         print(
-            f"❌ {method} → ERROR"
+            f"❌ {method} → ERROR: {e}"
         )
 
         return {
