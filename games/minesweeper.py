@@ -20,7 +20,7 @@ DIFFICULTIES = {
 
     "hard": {
         "name": "🔴 سخت",
-        "size": 9,
+        "size": 8,
         "mines": 20
     }
 }
