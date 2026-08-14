@@ -242,6 +242,47 @@ def send_inline_keypad(
     return result
 
 # ==========================================
+# تست Inline Keypad
+# ==========================================
+
+def send_test_inline(chat_id):
+
+    data = {
+        "chat_id": chat_id,
+        "text": (
+            "🧪 تست Inline Keypad\n\n"
+            "اگر دکمه را بزنی باید یک Update جدید "
+            "در Render بیاید."
+        ),
+        "inline_keypad": {
+            "rows": [
+                {
+                    "buttons": [
+                        {
+                            "id": "test_inline",
+                            "type": "Simple",
+                            "button_text": "🧪 تست Inline"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    print("🔵 TEST INLINE:")
+    print(data)
+
+    result = call_api(
+        "sendMessage",
+        data
+    )
+
+    print("🔵 TEST INLINE RESULT:")
+    print(result)
+
+    return result
+
+# ==========================================
 # Remove Chat Keypad
 # ==========================================
 

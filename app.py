@@ -19,7 +19,10 @@ from handlers.menu import (
 
 from games import reaction as reaction_game
 
-from rubika import send_message
+from rubika import (
+    send_message,
+    send_test_inline
+)
 
 from database import (
     create_tables,
@@ -668,6 +671,22 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+
+        # ==========================================
+        # تست Inline Keypad
+        # ==========================================
+
+        elif text == "🧪 تست Inline":
+
+            print("🟣 TEST INLINE BUTTON RECEIVED")
+
+            send_test_inline(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
 
         # ==========================================
         # مین‌روب
