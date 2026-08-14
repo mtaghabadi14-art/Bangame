@@ -62,13 +62,21 @@ def call_api(
 
         result = response.json()
 
-        print(
-            f"📡 {method} → {result.get('status', 'UNKNOWN')}"
+        status = result.get(
+            "status",
+            "UNKNOWN"
         )
 
-        if result.get("status") != "OK":
+        if status == "OK":
+
             print(
-                f"❌ API ERROR: {result}"
+                f"📤 {method} → OK"
+            )
+
+        else:
+
+            print(
+                f"❌ {method} → {status}"
             )
 
         return result
@@ -76,7 +84,7 @@ def call_api(
     except requests.exceptions.Timeout:
 
         print(
-            f"❌ {method} Timeout"
+            f"⏱️ {method} → TIMEOUT"
         )
 
         return {
@@ -86,7 +94,7 @@ def call_api(
     except requests.exceptions.RequestException as e:
 
         print(
-            f"❌ {method}: {e}"
+            f"❌ {method} → ERROR"
         )
 
         return {
@@ -97,14 +105,13 @@ def call_api(
     except Exception as e:
 
         print(
-            f"❌ {method}: {e}"
+            f"❌ {method} → ERROR"
         )
 
         return {
             "status": "ERROR",
             "error": str(e)
         }
-
 
 # ==========================================
 # Send Message
