@@ -60,7 +60,18 @@ def call_api(
 
         response.raise_for_status()
 
-        return response.json()
+        result = response.json()
+
+        print(
+            f"📡 {method} → {result.get('status', 'UNKNOWN')}"
+        )
+
+        if result.get("status") != "OK":
+            print(
+                f"❌ API ERROR: {result}"
+            )
+
+        return result
 
     except requests.exceptions.Timeout:
 
