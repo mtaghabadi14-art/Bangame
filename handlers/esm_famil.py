@@ -21,6 +21,8 @@ from handlers.esm_answers import (
     cancel_answer
 )
 
+from database import get_nickname
+
 
 # ==========================================
 # بازی‌های فعال
@@ -271,7 +273,6 @@ def get_game_data(room):
         )
     }
 
-
 # ==========================================
 # مدیریت پیام
 # ==========================================
@@ -296,13 +297,12 @@ def handle(
         return True
 
     # --------------------------------------
-    # خروج
+    # خروج از بازی / اتاق
     # --------------------------------------
 
     if text in (
         "🚪 خروج از بازی",
-        "🚪 خروج از اتاق",
-        "🚪 خروج"
+        "🚪 خروج از اتاق"
     ):
 
         exit_game(
@@ -313,7 +313,130 @@ def handle(
         return True
 
     # --------------------------------------
-    # لغو جواب
+    # اعتراض به نتیجه
+    # --------------------------------------
+
+    if text == "⚖️ اعتراض به نتیجه":
+
+        from handlers.esm_check import start_protest
+
+        start_protest(
+            room,
+            player
+        )
+
+        return True
+
+    # --------------------------------------
+    # لغو اعتراض
+    # --------------------------------------
+
+    if text == "❌ لغو":
+
+        room.data.pop(
+            "protest_selector",
+            None
+        )
+
+        room.data.pop(
+            "protest_category",
+            None
+        )
+
+        show_categories(
+            player
+        )
+
+        return True
+
+    # --------------------------------------
+    # انتخاب دسته اعتراض
+    # --------------------------------------
+
+    if (
+        room.data.get("protest_selector") == player
+        and text in categories
+    ):
+
+        from handlers.esm_check import select_protest_category
+
+        select_protest_category(
+            room,
+            player,
+            text
+        )
+
+        return True
+
+    # --------------------------------------
+    # انتخاب بازیکن مورد اعتراض
+    # --------------------------------------
+
+    if (
+        room.data.get("protest_selector") == player
+        and room.data.get("protest_category")
+        and text.startswith("👤 ")
+    ):
+
+        target = None
+
+        for opponent in room.players:
+
+            nickname = get_nickname(
+                opponent
+            ) or "بازیکن"
+
+            if text == f"👤 {nickname}":
+
+                target = opponent
+                break
+
+        if target:
+
+            from handlers.esm_check import select_protest_player
+
+            select_protest_player(
+                room,
+                player,
+                target
+            )
+
+            return True
+
+    # --------------------------------------
+    # تأیید اعتراض
+    # --------------------------------------
+
+    if text == "✅ تأیید اعتراض":
+
+        from handlers.esm_check import vote_protest
+
+        vote_protest(
+            room,
+            player,
+            True
+        )
+
+        return True
+
+    # --------------------------------------
+    # رد اعتراض
+    # --------------------------------------
+
+    if text == "❌ رد اعتراض":
+
+        from handlers.esm_check import vote_protest
+
+        vote_protest(
+            room,
+            player,
+            False
+        )
+
+        return True
+
+    # --------------------------------------
+    # لغو نوشتن جواب
     # --------------------------------------
 
     if text == "⬅️ انصراف":
@@ -339,7 +462,7 @@ def handle(
         return True
 
     # --------------------------------------
-    # انتخاب دسته
+    # انتخاب دسته معمولی
     # --------------------------------------
 
     if text in categories:

@@ -4,11 +4,12 @@ from rubika import (
 )
 
 from database import get_nickname
+
 from handlers.esm_buttons import CATEGORIES
 
 
 # ==========================================
-# گرفتن نام بازیکن
+# گرفتن نام نمایشی بازیکن
 # ==========================================
 
 def get_player_name(player):
@@ -44,8 +45,13 @@ def check_answer(
     answer
 ):
 
-    answer = normalize_answer(answer)
-    letter = normalize_answer(letter)
+    answer = normalize_answer(
+        answer
+    )
+
+    letter = normalize_answer(
+        letter
+    )
 
     if not answer:
         return False
@@ -53,11 +59,13 @@ def check_answer(
     if not letter:
         return False
 
-    return answer.startswith(letter)
+    return answer.startswith(
+        letter
+    )
 
 
 # ==========================================
-# امتیاز یک دسته
+# حساب امتیاز یک دسته
 # ==========================================
 
 def calculate_category_score(
@@ -67,6 +75,7 @@ def calculate_category_score(
 ):
 
     results = {}
+
     answers = {}
 
     for player, data in players_answers.items():
@@ -115,7 +124,7 @@ def calculate_category_score(
 
 
 # ==========================================
-# محاسبه کل امتیاز
+# بررسی کل بازی
 # ==========================================
 
 def check_game(room):
@@ -152,25 +161,362 @@ def check_game(room):
 
 
 # ==========================================
-# ساخت دکمه‌های نتیجه
+# آماده‌سازی سیستم اعتراض
 # ==========================================
 
-def build_result_keyboard():
+def init_protest(room):
 
-    return [
+    room.data.setdefault(
+        "protest",
+        None
+    )
+
+    room.data.setdefault(
+        "protest_votes",
+        {}
+    )
+
+
+# ==========================================
+# شروع اعتراض
+# ==========================================
+
+def start_protest(
+    room,
+    player
+):
+
+    init_protest(
+        room
+    )
+
+    # اگر اعتراض دیگری در حال بررسی است
+    if room.data.get("protest"):
+
+        send_message(
+            player,
+            "⚠️ در حال حاضر یک اعتراض در حال بررسی است."
+        )
+
+        return True
+
+    send_keypad(
+        player,
+        (
+            "⚖️ اعتراض به نتیجه\n\n"
+            "📚 دسته‌ای که فکر می‌کنی امتیازش اشتباه است را انتخاب کن:"
+        ),
         [
-            {
-                "id": "esm_complain",
-                "text": "⚖️ اعتراض به نتیجه"
-            }
-        ],
-        [
-            {
-                "id": "esm_exit_result",
-                "text": "🚪 خروج"
-            }
+            [
+                {
+                    "id": f"esm_protest_category_{index}",
+                    "text": category
+                }
+            ]
+            for index, category in enumerate(CATEGORIES)
+        ] + [
+            [
+                {
+                    "id": "esm_protest_cancel",
+                    "text": "❌ لغو"
+                }
+            ]
         ]
+    )
+
+    room.data["protest_selector"] = player
+
+    return True
+
+
+# ==========================================
+# انتخاب دسته اعتراض
+# ==========================================
+
+def select_protest_category(
+    room,
+    player,
+    category
+):
+
+    if category not in CATEGORIES:
+
+        return False
+
+    if room.data.get("protest_selector") != player:
+
+        return False
+
+    opponents = [
+        p
+        for p in room.players
+        if p != player
     ]
+
+    if not opponents:
+
+        send_message(
+            player,
+            "❌ بازیکن دیگری برای اعتراض وجود ندارد."
+        )
+
+        return True
+
+    room.data["protest_category"] = category
+
+    buttons = []
+
+    for opponent in opponents:
+
+        nickname = get_player_name(
+            opponent
+        )
+
+        buttons.append([
+            {
+                "id": f"esm_protest_player_{opponent}",
+                "text": f"👤 {nickname}"
+            }
+        ])
+
+    buttons.append([
+        {
+            "id": "esm_protest_cancel",
+            "text": "❌ لغو"
+        }
+    ])
+
+    send_keypad(
+        player,
+        (
+            "⚖️ اعتراض به نتیجه\n\n"
+            f"📚 دسته: {category}\n\n"
+            "👤 به جواب کدام بازیکن اعتراض داری؟"
+        ),
+        buttons
+    )
+
+    return True
+
+
+# ==========================================
+# ثبت اعتراض به بازیکن
+# ==========================================
+
+def select_protest_player(
+    room,
+    player,
+    target
+):
+
+    category = room.data.get(
+        "protest_category"
+    )
+
+    if not category:
+
+        return False
+
+    if target not in room.players:
+
+        return False
+
+    if target == player:
+
+        return False
+
+    answer = room.data.get(
+        "answers",
+        {}
+    ).get(
+        target,
+        {}
+    ).get(
+        category,
+        ""
+    )
+
+    room.data["protest"] = {
+        "protester": player,
+        "category": category,
+        "target": target,
+        "answer": answer
+    }
+
+    room.data["protest_votes"] = {}
+
+    # --------------------------------------
+    # بازیکن معترض رأی نمی‌دهد
+    # --------------------------------------
+
+    opponents = [
+        p
+        for p in room.players
+        if p != player
+    ]
+
+    # --------------------------------------
+    # ارسال درخواست رأی
+    # --------------------------------------
+
+    for voter in opponents:
+
+        send_keypad(
+            voter,
+            (
+                "⚖️ اعتراض به نتیجه\n\n"
+                f"👤 معترض: {get_player_name(player)}\n"
+                f"📚 دسته: {category}\n"
+                f"👤 بازیکن: {get_player_name(target)}\n"
+                f"📝 جواب: {answer or '❌ بدون جواب'}\n\n"
+                "آیا با اعتراض موافقی؟"
+            ),
+            [
+                [
+                    {
+                        "id": "esm_protest_approve",
+                        "text": "✅ تأیید اعتراض"
+                    }
+                ],
+                [
+                    {
+                        "id": "esm_protest_reject",
+                        "text": "❌ رد اعتراض"
+                    }
+                ]
+            ]
+        )
+
+    send_message(
+        player,
+        (
+            "⚖️ اعتراض ثبت شد.\n\n"
+            f"📚 دسته: {category}\n"
+            f"👤 بازیکن: {get_player_name(target)}\n"
+            f"📝 جواب: {answer or '❌ بدون جواب'}\n\n"
+            "⏳ منتظر رأی بازیکن دیگر باش..."
+        )
+    )
+
+    return True
+
+
+# ==========================================
+# ثبت رأی
+# ==========================================
+
+def vote_protest(
+    room,
+    voter,
+    approve
+):
+
+    protest = room.data.get(
+        "protest"
+    )
+
+    if not protest:
+
+        send_message(
+            voter,
+            "❌ اعتراض فعالی وجود ندارد."
+        )
+
+        return True
+
+    if voter == protest["protester"]:
+
+        return True
+
+    votes = room.data.setdefault(
+        "protest_votes",
+        {}
+    )
+
+    votes[voter] = (
+        "approve"
+        if approve
+        else "reject"
+    )
+
+    # --------------------------------------
+    # رأی لازم
+    # --------------------------------------
+
+    required_voters = [
+        p
+        for p in room.players
+        if p != protest["protester"]
+    ]
+
+    # هنوز همه رأی نداده‌اند
+    if len(votes) < len(required_voters):
+
+        send_message(
+            voter,
+            "✅ رأی تو ثبت شد."
+        )
+
+        return True
+
+    # --------------------------------------
+    # بررسی نتیجه
+    # --------------------------------------
+
+    rejected = any(
+        vote == "reject"
+        for vote in votes.values()
+    )
+
+    if rejected:
+
+        result_text = (
+            "❌ اعتراض رد شد.\n\n"
+            f"📚 دسته: {protest['category']}\n"
+            f"👤 بازیکن: {get_player_name(protest['target'])}\n"
+            f"📝 جواب: {protest['answer'] or '❌ بدون جواب'}"
+        )
+
+        for player in room.players:
+
+            send_message(
+                player,
+                result_text
+            )
+
+    else:
+
+        result_text = (
+            "✅ اعتراض تأیید شد.\n\n"
+            f"📚 دسته: {protest['category']}\n"
+            f"👤 بازیکن: {get_player_name(protest['target'])}\n"
+            f"📝 جواب: {protest['answer'] or '❌ بدون جواب'}\n\n"
+            "⚠️ نتیجه این اعتراض تأیید شد."
+        )
+
+        for player in room.players:
+
+            send_message(
+                player,
+                result_text
+            )
+
+    # --------------------------------------
+    # پاک کردن اعتراض
+    # --------------------------------------
+
+    room.data["protest"] = None
+    room.data["protest_votes"] = {}
+    room.data.pop(
+        "protest_selector",
+        None
+    )
+    room.data.pop(
+        "protest_category",
+        None
+    )
+
+    return True
 
 
 # ==========================================
@@ -183,15 +529,13 @@ def show_result(room):
         room
     )
 
-    # ذخیره امتیاز اولیه
-    room.data["scores"] = scores.copy()
-
-    # وضعیت اعتراض
-    room.data["complaint"] = None
-
     letter = room.data.get(
         "letter",
         "؟"
+    )
+
+    init_protest(
+        room
     )
 
     text = (
@@ -200,7 +544,7 @@ def show_result(room):
     )
 
     # ======================================
-    # جواب‌ها
+    # نمایش جواب‌ها
     # ======================================
 
     for category in CATEGORIES:
@@ -220,6 +564,7 @@ def show_result(room):
             )
 
             if not answer:
+
                 answer = "❌"
 
             nickname = get_player_name(
@@ -234,7 +579,7 @@ def show_result(room):
         text += "\n"
 
     # ======================================
-    # امتیاز
+    # امتیاز نهایی
     # ======================================
 
     text += (
@@ -280,11 +625,6 @@ def show_result(room):
             f"⭐ {score} امتیاز\n\n"
         )
 
-    text += (
-        "⚖️ اگر فکر می‌کنی امتیاز یک جواب اشتباه محاسبه شده، "
-        "می‌توانی اعتراض ثبت کنی."
-    )
-
     # ======================================
     # ارسال نتیجه
     # ======================================
@@ -294,7 +634,20 @@ def show_result(room):
         send_keypad(
             player,
             text,
-            build_result_keyboard()
+            [
+                [
+                    {
+                        "id": "esm_protest",
+                        "text": "⚖️ اعتراض به نتیجه"
+                    }
+                ],
+                [
+                    {
+                        "id": "esm_exit_result",
+                        "text": "🚪 خروج"
+                    }
+                ]
+            ]
         )
 
     return scores
