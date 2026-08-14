@@ -1,4 +1,5 @@
 import os
+from sqlite3 import _RowFactoryOptions
 import time
 import requests
 
@@ -69,21 +70,6 @@ def call_api(method, data=None):
             f"({elapsed:.2f}s)"
         )
 
-        # برای پیدا کردن خطاهای API
-        if isinstance(result, dict):
-
-            status = result.get("status")
-
-            if status != "OK":
-
-                print(
-                    f"⚠️ API STATUS: {status}"
-                )
-
-                print(
-                    f"⚠️ API RESULT: {result}"
-                )
-
         return result
 
     except requests.exceptions.Timeout:
@@ -138,21 +124,25 @@ def send_message(
 
 
 # ==========================================
-# ساخت یک دکمه
+# ساخت Button
 # ==========================================
 
-def _make_button(button):
+def build_button(button):
 
+    # اگر دیکشنری باشد
     if isinstance(button, dict):
 
-        button_id = str(
-            button.get("id", "")
-        )
-
-        button_text = str(
+        button_id = button.get(
+            "id",
             button.get("text", "")
         )
 
+        button_text = button.get(
+            "text",
+            str(button_id)
+        )
+
+    # اگر فقط متن باشد
     else:
 
         button_id = str(button)
@@ -170,7 +160,7 @@ def _make_button(button):
 # ساخت Rows
 # ==========================================
 
-def _build_rows(buttons):
+def build_rows(buttons):
 
     rows = []
 
@@ -181,7 +171,7 @@ def _build_rows(buttons):
         for button in row:
 
             button_row.append(
-                _make_button(button)
+                build_button(button)
             )
 
         rows.append({
@@ -201,30 +191,21 @@ def send_keypad(
     buttons
 ):
 
-    rows = _build_rows(
-        buttons
-    )
+    rows = build_rows(buttons)
 
-    payload = {
+    data = {
         "chat_id": chat_id,
         "text": text,
-
         "chat_keypad_type": "New",
-
         "chat_keypad": {
             "rows": rows,
             "resize_keyboard": True
         }
     }
 
-    print(
-        "⌨️ CHAT KEYPAD:",
-        payload
-    )
-
     return call_api(
         "sendMessage",
-        payload
+        data
     )
 
 
@@ -238,29 +219,28 @@ def send_inline_keypad(
     buttons
 ):
 
-    rows = _build_rows(
-        buttons
-    )
+    rows = build_rows(buttons)
 
-    payload = {
+    data = {
         "chat_id": chat_id,
         "text": text,
-
         "inline_keypad": {
             "rows": rows
         }
     }
 
-    print(
-        "🔘 INLINE KEYPAD:",
-        payload
-    )
+    print("🔵 SENDING INLINE KEYPAD:")
+    print(data)
 
-    return call_api(
+    result = call_api(
         "sendMessage",
-        payload
+        data
     )
 
+    print("🔵 INLINE KEYPAD API RESULT:")
+    print(result)
+
+    return result
 
 # ==========================================
 # Remove Chat Keypad
