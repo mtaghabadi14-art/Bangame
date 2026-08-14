@@ -434,27 +434,11 @@ def exit_game(
 
 def finish_round(room):
 
-    from handlers.menu import room_menu
+    from handlers.esm_check import show_result
 
-    for player in room.players:
-
-        send_message(
-            player,
-            (
-                "🎉 دور بازی تمام شد!\n"
-                "امتیازدهی به‌زودی اضافه می‌شود."
-            )
-        )
-
-    delete_room(
-        room.room_id
+    show_result(
+        room
     )
-
-    for player in room.players:
-
-        room_menu(
-            player
-        )
 
 
 # ==========================================

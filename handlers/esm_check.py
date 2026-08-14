@@ -1,12 +1,14 @@
-from rubika import send_message
+from rubika import (
+    send_message,
+    send_keypad
+)
 
 from database import get_nickname
-
 from handlers.esm_buttons import CATEGORIES
 
 
 # ==========================================
-# گرفتن نام نمایشی بازیکن
+# گرفتن نام بازیکن
 # ==========================================
 
 def get_player_name(player):
@@ -34,7 +36,7 @@ def normalize_answer(answer):
 
 
 # ==========================================
-# بررسی یک جواب
+# بررسی جواب
 # ==========================================
 
 def check_answer(
@@ -42,13 +44,8 @@ def check_answer(
     answer
 ):
 
-    answer = normalize_answer(
-        answer
-    )
-
-    letter = normalize_answer(
-        letter
-    )
+    answer = normalize_answer(answer)
+    letter = normalize_answer(letter)
 
     if not answer:
         return False
@@ -56,13 +53,11 @@ def check_answer(
     if not letter:
         return False
 
-    return answer.startswith(
-        letter
-    )
+    return answer.startswith(letter)
 
 
 # ==========================================
-# حساب امتیاز یک دسته
+# امتیاز یک دسته
 # ==========================================
 
 def calculate_category_score(
@@ -72,12 +67,7 @@ def calculate_category_score(
 ):
 
     results = {}
-
     answers = {}
-
-    # ======================================
-    # بررسی جواب تمام بازیکنان
-    # ======================================
 
     for player, data in players_answers.items():
 
@@ -101,33 +91,22 @@ def calculate_category_score(
 
             answers[player] = None
 
-    # ======================================
-    # جواب‌های صحیح
-    # ======================================
-
     correct_answers = [
         answer
         for answer in answers.values()
         if answer is not None
     ]
 
-    # ======================================
-    # امتیازدهی
-    # ======================================
-
     for player, answer in answers.items():
 
-        # جواب خالی یا اشتباه
         if answer is None:
 
             results[player] = 0
 
-        # جواب تکراری
         elif correct_answers.count(answer) > 1:
 
             results[player] = 5
 
-        # جواب صحیح و غیرتکراری
         else:
 
             results[player] = 20
@@ -136,7 +115,7 @@ def calculate_category_score(
 
 
 # ==========================================
-# بررسی کل بازی
+# محاسبه کل امتیاز
 # ==========================================
 
 def check_game(room):
@@ -153,17 +132,9 @@ def check_game(room):
 
     scores = {}
 
-    # ======================================
-    # مقداردهی اولیه امتیازها
-    # ======================================
-
     for player in players_answers:
 
         scores[player] = 0
-
-    # ======================================
-    # بررسی تمام دسته‌ها
-    # ======================================
 
     for category in CATEGORIES:
 
@@ -181,6 +152,28 @@ def check_game(room):
 
 
 # ==========================================
+# ساخت دکمه‌های نتیجه
+# ==========================================
+
+def build_result_keyboard():
+
+    return [
+        [
+            {
+                "id": "esm_complain",
+                "text": "⚖️ اعتراض به نتیجه"
+            }
+        ],
+        [
+            {
+                "id": "esm_exit_result",
+                "text": "🚪 خروج"
+            }
+        ]
+    ]
+
+
+# ==========================================
 # نمایش نتیجه
 # ==========================================
 
@@ -189,6 +182,12 @@ def show_result(room):
     scores = check_game(
         room
     )
+
+    # ذخیره امتیاز اولیه
+    room.data["scores"] = scores.copy()
+
+    # وضعیت اعتراض
+    room.data["complaint"] = None
 
     letter = room.data.get(
         "letter",
@@ -201,7 +200,7 @@ def show_result(room):
     )
 
     # ======================================
-    # نمایش جواب‌ها
+    # جواب‌ها
     # ======================================
 
     for category in CATEGORIES:
@@ -235,16 +234,12 @@ def show_result(room):
         text += "\n"
 
     # ======================================
-    # امتیاز نهایی
+    # امتیاز
     # ======================================
 
     text += (
         "🏆 امتیاز نهایی:\n\n"
     )
-
-    # ======================================
-    # مرتب‌سازی امتیازها
-    # ======================================
 
     sorted_scores = sorted(
         scores.items(),
@@ -264,7 +259,6 @@ def show_result(room):
             player
         )
 
-        # مدال
         if index == 1:
 
             medal = "🥇"
@@ -286,15 +280,21 @@ def show_result(room):
             f"⭐ {score} امتیاز\n\n"
         )
 
+    text += (
+        "⚖️ اگر فکر می‌کنی امتیاز یک جواب اشتباه محاسبه شده، "
+        "می‌توانی اعتراض ثبت کنی."
+    )
+
     # ======================================
     # ارسال نتیجه
     # ======================================
 
     for player in room.players:
 
-        send_message(
+        send_keypad(
             player,
-            text
+            text,
+            build_result_keyboard()
         )
 
     return scores
