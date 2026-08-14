@@ -1,5 +1,4 @@
 import os
-from sqlite3 import _RowFactoryOptions
 import time
 import requests
 
