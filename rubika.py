@@ -1,5 +1,4 @@
 import os
-import time
 import requests
 
 from requests.adapters import HTTPAdapter
@@ -43,12 +42,13 @@ session.headers.update({
 # API
 # ==========================================
 
-def call_api(method, data=None):
+def call_api(
+    method,
+    data=None
+):
 
     if data is None:
         data = {}
-
-    start = time.time()
 
     try:
 
@@ -60,16 +60,7 @@ def call_api(method, data=None):
 
         response.raise_for_status()
 
-        result = response.json()
-
-        elapsed = time.time() - start
-
-        print(
-            f"✅ {method} "
-            f"({elapsed:.2f}s)"
-        )
-
-        return result
+        return response.json()
 
     except requests.exceptions.Timeout:
 
@@ -132,7 +123,10 @@ def build_button(button):
 
         button_id = button.get(
             "id",
-            button.get("text", "")
+            button.get(
+                "text",
+                ""
+            )
         )
 
         button_text = button.get(
@@ -142,8 +136,13 @@ def build_button(button):
 
     else:
 
-        button_id = str(button)
-        button_text = str(button)
+        button_id = str(
+            button
+        )
+
+        button_text = str(
+            button
+        )
 
     return {
         "id": button_id,
@@ -167,7 +166,9 @@ def build_rows(buttons):
         for button in row:
 
             button_row.append(
-                build_button(button)
+                build_button(
+                    button
+                )
             )
 
         rows.append({
@@ -179,7 +180,6 @@ def build_rows(buttons):
 
 # ==========================================
 # Send Chat Keypad
-# فقط برای ساخت اولیه کی‌پد
 # ==========================================
 
 def send_keypad(
@@ -188,7 +188,9 @@ def send_keypad(
     buttons
 ):
 
-    rows = build_rows(buttons)
+    rows = build_rows(
+        buttons
+    )
 
     data = {
         "chat_id": chat_id,
@@ -208,7 +210,6 @@ def send_keypad(
 
 # ==========================================
 # Edit Chat Keypad
-# برای تغییر کی‌پد بدون ساخت پیام جدید
 # ==========================================
 
 def edit_chat_keypad(
@@ -216,7 +217,9 @@ def edit_chat_keypad(
     buttons
 ):
 
-    rows = build_rows(buttons)
+    rows = build_rows(
+        buttons
+    )
 
     data = {
         "chat_id": chat_id,
@@ -227,18 +230,10 @@ def edit_chat_keypad(
         }
     }
 
-    print("🔵 EDIT CHAT KEYPAD:")
-    print(data)
-
-    result = call_api(
+    return call_api(
         "editChatKeypad",
         data
     )
-
-    print("🔵 EDIT CHAT KEYPAD RESULT:")
-    print(result)
-
-    return result
 
 
 # ==========================================
@@ -307,39 +302,6 @@ def delete_message(
 
 
 # ==========================================
-# Edit Chat Keypad
-# ==========================================
-
-def edit_chat_keypad(
-    chat_id,
-    buttons
-):
-
-    rows = build_rows(buttons)
-
-    data = {
-        "chat_id": chat_id,
-        "chat_keypad_type": "New",
-        "chat_keypad": {
-            "rows": rows,
-            "resize_keyboard": True
-        }
-    }
-
-    print("🔵 EDIT CHAT KEYPAD:")
-    print(data)
-
-    result = call_api(
-        "editChatKeypad",
-        data
-    )
-
-    print("🔵 EDIT CHAT KEYPAD RESULT:")
-    print(result)
-
-    return result
-
-# ==========================================
 # Edit Message Text
 # ==========================================
 
@@ -349,21 +311,11 @@ def edit_message_text(
     text
 ):
 
-    data = {
-        "chat_id": chat_id,
-        "message_id": message_id,
-        "text": text
-    }
-
-    print("📝 EDIT MESSAGE:")
-    print(data)
-
-    result = call_api(
+    return call_api(
         "editMessageText",
-        data
+        {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text
+        }
     )
-
-    print("📝 EDIT MESSAGE RESULT:")
-    print(result)
-
-    return result

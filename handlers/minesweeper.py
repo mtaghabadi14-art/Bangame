@@ -14,7 +14,7 @@ from games.minesweeper import (
     get_board_size
 )
 
-from handlers.menu import room_menu
+from handlers.menu import games_menu
 
 
 # ==========================================
@@ -25,7 +25,7 @@ active_games = {}
 
 
 # ==========================================
-# ساخت متن وضعیت
+# متن وضعیت
 # ==========================================
 
 def build_status_text(game):
@@ -55,8 +55,7 @@ def build_status_text(game):
     mode_text = (
         "🔓 باز کردن"
         if game.get("mode", "reveal") == "reveal"
-        else
-        "🚩 پرچم‌گذاری"
+        else "🚩 پرچم‌گذاری"
     )
 
     return (
@@ -77,6 +76,8 @@ def build_board_keypad(game):
 
     size = get_board_size(game)
 
+    print(f"🟦 Minesweeper size={size}")
+
     buttons = []
 
     for row in range(size):
@@ -90,7 +91,6 @@ def build_board_keypad(game):
                 col
             )
 
-            # خانه باز
             if position in game["revealed"]:
 
                 value = game["board"][row][col]
@@ -104,12 +104,10 @@ def build_board_keypad(game):
                 else:
                     button_text = str(value)
 
-            # پرچم
             elif position in game["flags"]:
 
                 button_text = "🚩"
 
-            # خانه بسته
             else:
 
                 button_text = "⬜"
@@ -121,9 +119,9 @@ def build_board_keypad(game):
 
         buttons.append(row_buttons)
 
-    # ==========================================
-    # کنترل‌ها
-    # ==========================================
+    # ======================================
+    # کنترل‌های بازی
+    # ======================================
 
     buttons.append([
         {
@@ -151,8 +149,7 @@ def build_board_keypad(game):
 
 
 # ==========================================
-# ارسال اولیه زمین
-# فقط هنگام شروع بازی
+# ارسال زمین
 # ==========================================
 
 def send_board(
@@ -168,8 +165,7 @@ def send_board(
 
 
 # ==========================================
-# ویرایش کی‌پد
-# هیچ پیام جدیدی ارسال نمی‌شود
+# بروزرسانی زمین
 # ==========================================
 
 def update_board(
@@ -182,10 +178,6 @@ def update_board(
         build_board_keypad(game)
     )
 
-
-# ==========================================
-# شروع بازی
-# ==========================================
 
 def start(
     chat_id,
@@ -200,13 +192,11 @@ def start(
 
     active_games[chat_id] = game
 
-    # ======================================
-    # پیام وضعیت
-    # ======================================
-
-    result = send_message(
+    # ارسال زمین و وضعیت در یک پیام
+    result = send_keypad(
         chat_id,
-        build_status_text(game)
+        build_status_text(game),
+        build_board_keypad(game)
     )
 
     message_id = (
@@ -217,20 +207,9 @@ def start(
 
     game["status_message_id"] = message_id
 
-    # ======================================
-    # کی‌پد اولیه
-    # ======================================
-
-    send_board(
-        chat_id,
-        game
-    )
-
     return game
-
-
 # ==========================================
-# منوی انتخاب سختی
+# انتخاب سطح
 # ==========================================
 
 def show_difficulty_menu(
@@ -275,7 +254,7 @@ def show_difficulty_menu(
 
 
 # ==========================================
-# بروزرسانی پیام وضعیت
+# بروزرسانی وضعیت
 # ==========================================
 
 def update_status(
@@ -340,7 +319,6 @@ def set_mode(
 
     game["mode"] = mode
 
-    # فقط پیام وضعیت ویرایش می‌شود
     update_status(
         chat_id,
         game
@@ -371,7 +349,6 @@ def handle_cell(
     # ======================================
 
     if is_finished(game):
-
         return True
 
     mode = get_mode(
@@ -379,7 +356,7 @@ def handle_cell(
     )
 
     # ======================================
-    # حالت پرچم
+    # پرچم
     # ======================================
 
     if mode == "flag":
@@ -410,18 +387,10 @@ def handle_cell(
 
             return True
 
-        # ==================================
-        # وضعیت
-        # ==================================
-
         update_status(
             chat_id,
             game
         )
-
-        # ==================================
-        # فقط ویرایش کی‌پد
-        # ==================================
 
         update_board(
             chat_id,
@@ -431,7 +400,7 @@ def handle_cell(
         return True
 
     # ======================================
-    # حالت باز کردن
+    # باز کردن
     # ======================================
 
     result = reveal_cell(
@@ -461,7 +430,7 @@ def handle_cell(
         return True
 
     # ======================================
-    # وضعیت
+    # وضعیت و زمین
     # ======================================
 
     update_status(
@@ -469,16 +438,29 @@ def handle_cell(
         game
     )
 
-    # ======================================
-    # کی‌پد
-    # ======================================
-
     update_board(
         chat_id,
         game
     )
 
-    return True
+    # ======================================
+    # پایان بازی
+    # ======================================
+
+    if is_finished(game):
+
+        active_games.pop(
+            chat_id,
+            None
+        )
+
+        games_menu(
+            chat_id
+        )
+
+        return True
+
+    return True    
 
 
 # ==========================================
@@ -610,6 +592,6 @@ def exit_game(
         "🚪 از ماین‌یاب خارج شدی."
     )
 
-    room_menu(
+    games_menu(
         chat_id
     )
