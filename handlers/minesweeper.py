@@ -1,7 +1,7 @@
 from rubika import (
     send_message,
     send_keypad,
-    send_inline_keypad
+    edit_message_text
 )
 
 from games.minesweeper import (
@@ -12,76 +12,104 @@ from games.minesweeper import (
     is_won,
     get_remaining_mines,
     get_flag_count,
-    BOARD_SIZE
+    get_board_size,
+    DIFFICULTIES
 )
 
 from handlers.menu import room_menu
 
 
 # ==========================================
-# بازی‌های فعال ماین‌یاب
+# بازی‌های فعال
 # ==========================================
 
 active_games = {}
 
 
 # ==========================================
-# ساخت متن صفحه
+# ساخت متن وضعیت
 # ==========================================
 
-def build_board_text(game):
-
-    text = (
-        "💣 ماین‌یاب Vexon\n\n"
-        f"💣 مین‌ها: {get_remaining_mines(game)}\n"
-        f"🚩 پرچم‌ها: {get_flag_count(game)}\n\n"
-    )
+def build_status_text(game):
 
     if game["finished"]:
 
         if game["won"]:
-            text += "🏆 تبریک! همه خانه‌های امن را باز کردی!\n\n"
-        else:
-            text += "💥 BOOM! روی مین رفتی!\n\n"
 
-    else:
+            return (
+                "🏆 بازی تمام شد!\n\n"
+                "💣 ماین‌یاب Vexon\n"
+                f"{game['difficulty_name']}\n\n"
+                "🎉 تبریک! همه خانه‌های امن را باز کردی!\n\n"
+                f"💣 مین‌ها: {game['mine_count']}\n"
+                f"🚩 پرچم‌ها: {get_flag_count(game)}"
+            )
 
-        text += "👇 یک خانه را انتخاب کن:\n\n"
+        return (
+            "💥 BOOM!\n\n"
+            "💣 ماین‌یاب Vexon\n"
+            f"{game['difficulty_name']}\n\n"
+            "💣 روی مین رفتی!\n\n"
+            f"💣 مین‌ها: {game['mine_count']}\n"
+            f"🚩 پرچم‌ها: {get_flag_count(game)}"
+        )
 
-    return text
+    mode_text = (
+        "🔓 باز کردن"
+        if game["mode"] == "reveal"
+        else
+        "🚩 پرچم‌گذاری"
+    )
+
+    return (
+        "🎮 ماین‌یاب Vexon\n\n"
+        f"{game['difficulty_name']}\n"
+        f"💣 مین‌ها: {game['mine_count']}\n"
+        f"🚩 پرچم‌ها: {get_flag_count(game)}\n\n"
+        f"🎯 حالت فعلی شما: {mode_text}\n\n"
+        "👇 یک خانه را انتخاب کن."
+    )
 
 
 # ==========================================
-# ساخت Chat Keypad صفحه بازی
+# ساخت زمین
 # ==========================================
 
 def build_board_keypad(game):
 
+    size = get_board_size(game)
+
     buttons = []
 
-    for row in range(BOARD_SIZE):
+    for row in range(size):
 
         row_buttons = []
 
-        for col in range(BOARD_SIZE):
+        for col in range(size):
 
             position = (
                 row,
                 col
             )
 
-            # خانه باز شده
+            # خانه باز
             if position in game["revealed"]:
 
                 value = game["board"][row][col]
 
-                if value == 0:
+                if value == -1:
+
+                    button_text = "💣"
+
+                elif value == 0:
+
                     button_text = "·"
 
                 else:
+
                     button_text = str(value)
 
-            # خانه پرچم‌گذاری شده
+            # پرچم
             elif position in game["flags"]:
 
                 button_text = "🚩"
@@ -92,47 +120,142 @@ def build_board_keypad(game):
                 button_text = "⬜"
 
             row_buttons.append({
-                "id": f"mine_{row}_{col}",
+
+                "id": (
+                    f"mine_{row}_{col}"
+                ),
+
                 "text": button_text
+
             })
 
-        buttons.append(row_buttons)
+        buttons.append(
+            row_buttons
+        )
+
+    # کنترل‌ها
+    buttons.append([
+        {
+            "id": "minesweeper_reveal",
+            "text": "🔓 باز کردن"
+        },
+
+        {
+            "id": "minesweeper_flag",
+            "text": "🚩 پرچم"
+        }
+    ])
+
+    buttons.append([
+        {
+            "id": "minesweeper_new",
+            "text": "🔄 بازی جدید"
+        },
+
+        {
+            "id": "minesweeper_exit",
+            "text": "🚪 خروج"
+        }
+    ])
 
     return buttons
 
 
 # ==========================================
-# ساخت Inline Keypad کنترل‌ها
+# ارسال / بروزرسانی صفحه بازی
 # ==========================================
 
-def build_control_buttons(game):
+def send_board(
+    chat_id,
+    game
+):
 
-    if game["finished"]:
+    text = build_status_text(
+        game
+    )
 
-        return [
-            [
-                {
-                    "id": "minesweeper_new",
-                    "text": "🔄 بازی جدید"
-                },
-                {
-                    "id": "minesweeper_exit",
-                    "text": "🚪 خروج"
-                }
-            ]
-        ]
+    keypad = build_board_keypad(
+        game
+    )
 
-    return [
+    result = send_keypad(
+        chat_id,
+        text,
+        keypad
+    )
+
+    return result
+
+
+# ==========================================
+# شروع بازی
+# ==========================================
+
+def start(
+    chat_id,
+    difficulty="easy"
+):
+
+    game = create_game(
+        difficulty
+    )
+
+    active_games[chat_id] = game
+
+    # پیام وضعیت جداگانه
+    result = send_message(
+        chat_id,
+        build_status_text(game)
+    )
+
+    message_id = (
+        result
+        .get("data", {})
+        .get("message_id")
+    )
+
+    game["status_message_id"] = message_id
+
+    # کی‌پد بازی
+    send_keypad(
+        chat_id,
+        "🎮 زمین ماین‌یاب:",
+        build_board_keypad(game)
+    )
+
+    return game
+
+
+# ==========================================
+# انتخاب سختی
+# ==========================================
+
+def show_difficulty_menu(
+    chat_id
+):
+
+    buttons = [
         [
             {
-                "id": "minesweeper_reveal",
-                "text": "🔓 باز کردن"
-            },
-            {
-                "id": "minesweeper_flag",
-                "text": "🚩 پرچم"
+                "id": "minesweeper_easy",
+                "text": "🟢 آسان"
             }
         ],
+
+        [
+            {
+                "id": "minesweeper_medium",
+                "text": "🟡 متوسط"
+            }
+        ],
+
+        [
+            {
+                "id": "minesweeper_hard",
+                "text": "🔴 سخت"
+            }
+        ],
+
         [
             {
                 "id": "minesweeper_exit",
@@ -141,70 +264,53 @@ def build_control_buttons(game):
         ]
     ]
 
+    send_keypad(
+        chat_id,
+        (
+            "💣 ماین‌یاب Vexon\n\n"
+            "🎯 سطح بازی را انتخاب کن:"
+        ),
+        buttons
+    )
+
 
 # ==========================================
-# ارسال صفحه بازی
+# ویرایش پیام وضعیت
 # ==========================================
 
-def send_board(
+def update_status(
     chat_id,
     game
 ):
 
-    text = build_board_text(game)
-
-    # صفحه بازی = Chat Keypad
-    board_keypad = build_board_keypad(game)
-
-    send_keypad(
-        chat_id,
-        text,
-        board_keypad
+    message_id = game.get(
+        "status_message_id"
     )
 
-    # کنترل‌ها = Inline Keypad
-    control_buttons = build_control_buttons(game)
+    if not message_id:
+        return
 
-    send_inline_keypad(
+    edit_message_text(
         chat_id,
-        "🎮 کنترل ماین‌یاب:",
-        control_buttons
+        message_id,
+        build_status_text(game)
     )
 
 
 # ==========================================
-# شروع بازی
-# ==========================================
-
-def start(
-    chat_id
-):
-
-    game = create_game()
-
-    active_games[chat_id] = game
-
-    send_board(
-        chat_id,
-        game
-    )
-
-
-# ==========================================
-# حالت فعلی بازیکن
+# حالت فعلی
 # ==========================================
 
 def get_mode(chat_id):
 
-    game_data = active_games.get(
+    game = active_games.get(
         chat_id
     )
 
-    if not game_data:
-
+    if not game:
         return None
 
-    return game_data.get(
+    return game.get(
         "mode",
         "reveal"
     )
@@ -234,6 +340,11 @@ def set_mode(
 
     game["mode"] = mode
 
+    update_status(
+        chat_id,
+        game
+    )
+
     return True
 
 
@@ -256,9 +367,9 @@ def handle_cell(
 
     if is_finished(game):
 
-        send_message(
+        update_status(
             chat_id,
-            "🏁 این بازی تمام شده است."
+            game
         )
 
         return True
@@ -268,7 +379,7 @@ def handle_cell(
     )
 
     # ======================================
-    # حالت پرچم
+    # پرچم
     # ======================================
 
     if mode == "flag":
@@ -281,24 +392,41 @@ def handle_cell(
 
         if not result["success"]:
 
-            if result["reason"] == "already_revealed":
+            reason = result["reason"]
+
+            if reason == "already_revealed":
 
                 send_message(
                     chat_id,
                     "❌ این خانه قبلاً باز شده است."
                 )
 
+            elif reason == "too_many_flags":
+
+                send_message(
+                    chat_id,
+                    "🚩 تعداد پرچم‌ها به تعداد مین‌ها رسیده است."
+                )
+
             return True
 
-        send_board(
+        # بروزرسانی وضعیت
+        update_status(
             chat_id,
             game
+        )
+
+        # بروزرسانی زمین
+        send_keypad(
+            chat_id,
+            "🎮 زمین ماین‌یاب:",
+            build_board_keypad(game)
         )
 
         return True
 
     # ======================================
-    # حالت باز کردن
+    # باز کردن
     # ======================================
 
     result = reveal_cell(
@@ -309,34 +437,42 @@ def handle_cell(
 
     if not result["success"]:
 
-        if result["reason"] == "already_revealed":
+        reason = result["reason"]
+
+        if reason == "already_revealed":
 
             send_message(
                 chat_id,
                 "❌ این خانه قبلاً باز شده است."
             )
 
-        elif result["reason"] == "flagged":
+        elif reason == "flagged":
 
             send_message(
                 chat_id,
-                "🚩 این خانه پرچم دارد؛ "
-                "اول پرچم را بردار."
+                "🚩 این خانه پرچم دارد؛ اول پرچم را بردار."
             )
 
         return True
 
-    # نمایش نتیجه
-    send_board(
+    # وضعیت
+    update_status(
         chat_id,
         game
+    )
+
+    # زمین
+    send_keypad(
+        chat_id,
+        "🎮 زمین ماین‌یاب:",
+        build_board_keypad(game)
     )
 
     return True
 
 
 # ==========================================
-# دکمه‌های Inline
+# کنترل‌ها
 # ==========================================
 
 def handle_control(
@@ -344,9 +480,44 @@ def handle_control(
     action
 ):
 
-    game = active_games.get(
-        chat_id
-    )
+    # ======================================
+    # سطح آسان
+    # ======================================
+
+    if action == "minesweeper_easy":
+
+        start(
+            chat_id,
+            "easy"
+        )
+
+        return True
+
+    # ======================================
+    # سطح متوسط
+    # ======================================
+
+    if action == "minesweeper_medium":
+
+        start(
+            chat_id,
+            "medium"
+        )
+
+        return True
+
+    # ======================================
+    # سطح سخت
+    # ======================================
+
+    if action == "minesweeper_hard":
+
+        start(
+            chat_id,
+            "hard"
+        )
+
+        return True
 
     # ======================================
     # باز کردن
@@ -354,18 +525,16 @@ def handle_control(
 
     if action == "minesweeper_reveal":
 
+        game = active_games.get(
+            chat_id
+        )
+
         if not game:
             return False
 
         set_mode(
             chat_id,
             "reveal"
-        )
-
-        send_message(
-            chat_id,
-            "🔓 حالت باز کردن فعال شد.\n"
-            "حالا یک خانه را انتخاب کن."
         )
 
         return True
@@ -376,18 +545,16 @@ def handle_control(
 
     if action == "minesweeper_flag":
 
+        game = active_games.get(
+            chat_id
+        )
+
         if not game:
             return False
 
         set_mode(
             chat_id,
             "flag"
-        )
-
-        send_message(
-            chat_id,
-            "🚩 حالت پرچم فعال شد.\n"
-            "حالا یک خانه را انتخاب کن."
         )
 
         return True
@@ -398,8 +565,22 @@ def handle_control(
 
     if action == "minesweeper_new":
 
-        start(
+        old_game = active_games.get(
             chat_id
+        )
+
+        difficulty = "easy"
+
+        if old_game:
+
+            difficulty = old_game.get(
+                "difficulty",
+                "easy"
+            )
+
+        start(
+            chat_id,
+            difficulty
         )
 
         return True
@@ -420,7 +601,7 @@ def handle_control(
 
 
 # ==========================================
-# خروج از بازی
+# خروج
 # ==========================================
 
 def exit_game(
@@ -437,7 +618,6 @@ def exit_game(
         "🚪 از ماین‌یاب خارج شدی."
     )
 
-    # برگشت به کافه بازی
     room_menu(
         chat_id
     )

@@ -2,128 +2,310 @@ import random
 
 
 # ==========================================
-# تنظیمات بازی
+# Difficulty
 # ==========================================
 
-BOARD_SIZE = 5
-MINE_COUNT = 5
+DIFFICULTIES = {
+    "easy": {
+        "name": "🟢 آسان",
+        "size": 5,
+        "mines": 5
+    },
+
+    "medium": {
+        "name": "🟡 متوسط",
+        "size": 8,
+        "mines": 12
+    },
+
+    "hard": {
+        "name": "🔴 سخت",
+        "size": 10,
+        "mines": 20
+    }
+}
 
 
 # ==========================================
-# ساخت صفحه
+# Neighbors
 # ==========================================
 
-def create_board():
-    """
-    ساخت یک صفحه 5×5 و قرار دادن مین‌ها
-    """
+def get_neighbors(row, col, size):
 
-    board = [
-        [0 for _ in range(BOARD_SIZE)]
-        for _ in range(BOARD_SIZE)
-    ]
+    neighbors = []
 
-    positions = [
+    for dr in (-1, 0, 1):
+
+        for dc in (-1, 0, 1):
+
+            if dr == 0 and dc == 0:
+                continue
+
+            nr = row + dr
+            nc = col + dc
+
+            if (
+                0 <= nr < size
+                and 0 <= nc < size
+            ):
+                neighbors.append(
+                    (nr, nc)
+                )
+
+    return neighbors
+
+
+# ==========================================
+# First-click safe area
+# ==========================================
+
+def get_safe_zone(row, col, size):
+
+    safe = {
         (row, col)
-        for row in range(BOARD_SIZE)
-        for col in range(BOARD_SIZE)
+    }
+
+    for position in get_neighbors(
+        row,
+        col,
+        size
+    ):
+        safe.add(position)
+
+    return safe
+
+
+# ==========================================
+# Create empty board
+# ==========================================
+
+def create_empty_board(size):
+
+    return [
+        [0 for _ in range(size)]
+        for _ in range(size)
     ]
 
-    mines = random.sample(
-        positions,
-        MINE_COUNT
+
+# ==========================================
+# Place mines AFTER first click
+# ==========================================
+
+def place_mines(
+    game,
+    first_row,
+    first_col
+):
+
+    size = game["size"]
+    mine_count = game["mine_count"]
+
+    safe_zone = get_safe_zone(
+        first_row,
+        first_col,
+        size
     )
 
-    for row, col in mines:
+    all_cells = [
+        (r, c)
+        for r in range(size)
+        for c in range(size)
+        if (r, c) not in safe_zone
+    ]
 
-        board[row][col] = -1
+    # در صورت نیاز، اگر تعداد خانه‌های
+    # امن زیاد بود، از خود اولین خانه
+    # فاصله می‌گیریم ولی همیشه اولین خانه امن است.
+    if len(all_cells) < mine_count:
 
-    # محاسبه تعداد مین‌های اطراف
-    for row in range(BOARD_SIZE):
+        all_cells = [
+            (r, c)
+            for r in range(size)
+            for c in range(size)
+            if (r, c) != (first_row, first_col)
+        ]
 
-        for col in range(BOARD_SIZE):
+    mines = set(
+        random.sample(
+            all_cells,
+            mine_count
+        )
+    )
 
-            if board[row][col] == -1:
+    game["mines"] = mines
+
+    # ساخت اعداد
+    for row in range(size):
+
+        for col in range(size):
+
+            if (row, col) in mines:
+
+                game["board"][row][col] = -1
+
                 continue
 
             count = 0
 
-            for dr in (-1, 0, 1):
+            for nr, nc in get_neighbors(
+                row,
+                col,
+                size
+            ):
 
-                for dc in (-1, 0, 1):
+                if (nr, nc) in mines:
+                    count += 1
 
-                    if dr == 0 and dc == 0:
-                        continue
+            game["board"][row][col] = count
 
-                    nr = row + dr
-                    nc = col + dc
-
-                    if (
-                        0 <= nr < BOARD_SIZE
-                        and 0 <= nc < BOARD_SIZE
-                        and board[nr][nc] == -1
-                    ):
-
-                        count += 1
-
-            board[row][col] = count
-
-    return board
+    game["generated"] = True
 
 
 # ==========================================
-# ساخت بازی
+# Create Game
 # ==========================================
 
-def create_game():
+def create_game(
+    difficulty="easy"
+):
 
-    board = create_board()
+    config = DIFFICULTIES.get(
+        difficulty,
+        DIFFICULTIES["easy"]
+    )
+
+    size = config["size"]
+    mine_count = config["mines"]
 
     return {
-        "board": board,
+        "difficulty": difficulty,
+        "difficulty_name": config["name"],
 
-        # خانه‌هایی که باز شده‌اند
+        "size": size,
+        "mine_count": mine_count,
+
+        "board": create_empty_board(size),
+
+        "mines": set(),
+
         "revealed": set(),
-
-        # خانه‌هایی که پرچم دارند
         "flags": set(),
 
-        "finished": False,
+        "generated": False,
 
-        "won": False
+        "finished": False,
+        "won": False,
+
+        "mode": "reveal"
     }
 
 
 # ==========================================
-# بررسی مختصات
+# Reveal empty area
 # ==========================================
 
-def valid_position(row, col):
+def flood_reveal(
+    game,
+    start_row,
+    start_col
+):
 
-    return (
-        0 <= row < BOARD_SIZE
-        and 0 <= col < BOARD_SIZE
+    size = game["size"]
+
+    queue = [
+        (start_row, start_col)
+    ]
+
+    visited = set()
+
+    while queue:
+
+        row, col = queue.pop(0)
+
+        if (row, col) in visited:
+            continue
+
+        visited.add(
+            (row, col)
+        )
+
+        if (row, col) in game["flags"]:
+            continue
+
+        if (row, col) in game["mines"]:
+            continue
+
+        game["revealed"].add(
+            (row, col)
+        )
+
+        value = game["board"][row][col]
+
+        # اگر صفر بود اطرافش هم باز شود
+        if value == 0:
+
+            for neighbor in get_neighbors(
+                row,
+                col,
+                size
+            ):
+
+                if neighbor not in visited:
+
+                    if neighbor not in game["flags"]:
+
+                        queue.append(
+                            neighbor
+                        )
+
+
+# ==========================================
+# Check Win
+# ==========================================
+
+def check_win(game):
+
+    total_cells = (
+        game["size"] *
+        game["size"]
     )
 
+    safe_cells = (
+        total_cells -
+        game["mine_count"]
+    )
+
+    if len(game["revealed"]) >= safe_cells:
+
+        game["finished"] = True
+        game["won"] = True
+
+        return True
+
+    return False
+
 
 # ==========================================
-# گرفتن مقدار یک خانه
+# Reveal Cell
 # ==========================================
 
-def get_cell(game, row, col):
+def reveal_cell(
+    game,
+    row,
+    col
+):
 
-    if not valid_position(row, col):
+    size = game["size"]
 
-        return None
+    if not (
+        0 <= row < size
+        and 0 <= col < size
+    ):
 
-    return game["board"][row][col]
-
-
-# ==========================================
-# باز کردن خانه
-# ==========================================
-
-def reveal_cell(game, row, col):
+        return {
+            "success": False,
+            "reason": "invalid"
+        }
 
     if game["finished"]:
 
@@ -132,16 +314,11 @@ def reveal_cell(game, row, col):
             "reason": "finished"
         }
 
-    if not valid_position(row, col):
+    position = (
+        row,
+        col
+    )
 
-        return {
-            "success": False,
-            "reason": "invalid"
-        }
-
-    position = (row, col)
-
-    # خانه قبلاً باز شده
     if position in game["revealed"]:
 
         return {
@@ -149,7 +326,6 @@ def reveal_cell(game, row, col):
             "reason": "already_revealed"
         }
 
-    # خانه پرچم دارد
     if position in game["flags"]:
 
         return {
@@ -158,136 +334,81 @@ def reveal_cell(game, row, col):
         }
 
     # ======================================
-    # برخورد با مین
+    # اولین کلیک
     # ======================================
 
-    if game["board"][row][col] == -1:
+    if not game["generated"]:
 
-        game["revealed"].add(position)
+        place_mines(
+            game,
+            row,
+            col
+        )
+
+    # ======================================
+    # مین
+    # ======================================
+
+    if position in game["mines"]:
+
+        game["revealed"].add(
+            position
+        )
 
         game["finished"] = True
         game["won"] = False
 
+        # نمایش تمام مین‌ها
+        for mine in game["mines"]:
+
+            game["revealed"].add(
+                mine
+            )
+
         return {
             "success": True,
-            "mine": True,
-            "finished": True,
-            "won": False
+            "mine": True
         }
 
     # ======================================
     # خانه امن
     # ======================================
 
-    reveal_empty_area(
+    flood_reveal(
         game,
         row,
         col
     )
 
-    # بررسی برد
-    if check_win(game):
-
-        game["finished"] = True
-        game["won"] = True
-
-        return {
-            "success": True,
-            "mine": False,
-            "finished": True,
-            "won": True
-        }
+    check_win(game)
 
     return {
         "success": True,
-        "mine": False,
-        "finished": False,
-        "won": False
+        "mine": False
     }
 
 
 # ==========================================
-# باز کردن خودکار خانه‌های صفر
+# Toggle Flag
 # ==========================================
 
-def reveal_empty_area(game, row, col):
+def toggle_flag(
+    game,
+    row,
+    col
+):
 
-    queue = [(row, col)]
-    visited = set()
+    size = game["size"]
 
-    while queue:
+    if not (
+        0 <= row < size
+        and 0 <= col < size
+    ):
 
-        current_row, current_col = queue.pop(0)
-
-        position = (
-            current_row,
-            current_col
-        )
-
-        if position in visited:
-            continue
-
-        visited.add(position)
-
-        if not valid_position(
-            current_row,
-            current_col
-        ):
-            continue
-
-        if position in game["flags"]:
-            continue
-
-        if game["board"][
-            current_row
-        ][
-            current_col
-        ] == -1:
-
-            continue
-
-        game["revealed"].add(position)
-
-        # اگر عدد صفر نیست،
-        # دیگر اطرافش را باز نمی‌کنیم
-        if game["board"][
-            current_row
-        ][
-            current_col
-        ] != 0:
-
-            continue
-
-        # اضافه کردن خانه‌های اطراف
-        for dr in (-1, 0, 1):
-
-            for dc in (-1, 0, 1):
-
-                if dr == 0 and dc == 0:
-                    continue
-
-                nr = current_row + dr
-                nc = current_col + dc
-
-                if valid_position(nr, nc):
-
-                    neighbour = (
-                        nr,
-                        nc
-                    )
-
-                    if neighbour not in visited:
-
-                        queue.append(
-                            neighbour
-                        )
-
-
-# ==========================================
-# گذاشتن / برداشتن پرچم
-# ==========================================
-
-def toggle_flag(game, row, col):
+        return {
+            "success": False,
+            "reason": "invalid"
+        }
 
     if game["finished"]:
 
@@ -296,19 +417,11 @@ def toggle_flag(game, row, col):
             "reason": "finished"
         }
 
-    if not valid_position(row, col):
-
-        return {
-            "success": False,
-            "reason": "invalid"
-        }
-
     position = (
         row,
         col
     )
 
-    # خانه باز شده را نمی‌توان پرچم زد
     if position in game["revealed"]:
 
         return {
@@ -316,18 +429,27 @@ def toggle_flag(game, row, col):
             "reason": "already_revealed"
         }
 
-    # اگر پرچم دارد، بردار
     if position in game["flags"]:
 
-        game["flags"].remove(position)
+        game["flags"].remove(
+            position
+        )
 
         return {
             "success": True,
             "flagged": False
         }
 
-    # پرچم جدید
-    game["flags"].add(position)
+    if len(game["flags"]) >= game["mine_count"]:
+
+        return {
+            "success": False,
+            "reason": "too_many_flags"
+        }
+
+    game["flags"].add(
+        position
+    )
 
     return {
         "success": True,
@@ -336,38 +458,38 @@ def toggle_flag(game, row, col):
 
 
 # ==========================================
-# بررسی برد
+# Finished
 # ==========================================
 
-def check_win(game):
+def is_finished(game):
 
-    total_cells = (
-        BOARD_SIZE * BOARD_SIZE
-    )
-
-    safe_cells = (
-        total_cells - MINE_COUNT
-    )
-
-    return len(
-        game["revealed"]
-    ) >= safe_cells
+    return game["finished"]
 
 
 # ==========================================
-# تعداد مین‌های باقی‌مانده
+# Won
+# ==========================================
+
+def is_won(game):
+
+    return game["won"]
+
+
+# ==========================================
+# Remaining Mines
 # ==========================================
 
 def get_remaining_mines(game):
 
-    return (
-        MINE_COUNT
-        - len(game["flags"])
+    return max(
+        0,
+        game["mine_count"] -
+        len(game["flags"])
     )
 
 
 # ==========================================
-# تعداد پرچم‌ها
+# Flag Count
 # ==========================================
 
 def get_flag_count(game):
@@ -378,24 +500,9 @@ def get_flag_count(game):
 
 
 # ==========================================
-# وضعیت بازی
+# Board Size
 # ==========================================
 
-def is_finished(game):
+def get_board_size(game):
 
-    return game.get(
-        "finished",
-        False
-    )
-
-
-# ==========================================
-# برنده شدن
-# ==========================================
-
-def is_won(game):
-
-    return game.get(
-        "won",
-        False
-    )
+    return game["size"]

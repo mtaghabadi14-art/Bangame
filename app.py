@@ -21,7 +21,6 @@ from games import reaction as reaction_game
 
 from rubika import (
     send_message,
-    send_test_inline
 )
 
 from database import (
@@ -225,18 +224,20 @@ async def receive_update(request: Request):
 
 
         # ==========================================
-        # ماین‌روب
-        # دکمه‌های Inline + خانه‌های بازی
+        # ماین‌یاب
         # ==========================================
 
         if chat_id in minesweeper_handler.active_games:
 
             # --------------------------------------
-            # دکمه‌های کنترل Inline
+            # کنترل‌های ماین‌یاب
             # --------------------------------------
 
-            if button_id and button_id.startswith(
-                "minesweeper_"
+            if (
+                button_id
+                and button_id.startswith(
+                    "minesweeper_"
+                )
             ):
 
                 minesweeper_handler.handle_control(
@@ -248,13 +249,15 @@ async def receive_update(request: Request):
                     "ok": True
                 }
 
-
             # --------------------------------------
-            # دکمه‌های خانه‌های صفحه
+            # خانه‌های زمین
             # --------------------------------------
 
-            if button_id and button_id.startswith(
-                "mine_"
+            if (
+                button_id
+                and button_id.startswith(
+                    "mine_"
+                )
             ):
 
                 parts = button_id.split("_")
@@ -279,7 +282,6 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
-
 
         # ==========================================
         # ورود به اتاق
@@ -671,30 +673,13 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
-        # ==========================================
-        # تست Inline Keypad
-        # ==========================================
-
-        elif text == "🧪 تست Inline":
-
-            print("🟣 TEST INLINE BUTTON RECEIVED")
-
-            send_test_inline(
-                chat_id
-            )
-
-            return {
-                "ok": True
-            }
-
         # ==========================================
         # مین‌روب
         # ==========================================
 
         elif text == "💣 مین‌روب":
 
-            minesweeper_handler.start(
+            minesweeper_handler.show_difficulty_menu(
                 chat_id
             )
 

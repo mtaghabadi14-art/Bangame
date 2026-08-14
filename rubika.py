@@ -209,80 +209,6 @@ def send_keypad(
 
 
 # ==========================================
-# Send Inline Keypad
-# ==========================================
-
-def send_inline_keypad(
-    chat_id,
-    text,
-    buttons
-):
-
-    rows = build_rows(buttons)
-
-    data = {
-        "chat_id": chat_id,
-        "text": text,
-        "inline_keypad": {
-            "rows": rows
-        }
-    }
-
-    print("🔵 SENDING INLINE KEYPAD:")
-    print(data)
-
-    result = call_api(
-        "sendMessage",
-        data
-    )
-
-    print("🔵 INLINE KEYPAD API RESULT:")
-    print(result)
-
-    return result
-
-# ==========================================
-# تست Inline Keypad
-# ==========================================
-
-def send_test_inline(chat_id):
-
-    data = {
-        "chat_id": chat_id,
-        "text": (
-            "🧪 تست Inline Keypad\n\n"
-            "اگر دکمه را بزنی باید یک Update جدید "
-            "در Render بیاید."
-        ),
-        "inline_keypad": {
-            "rows": [
-                {
-                    "buttons": [
-                        {
-                            "id": "test_inline",
-                            "type": "Simple",
-                            "button_text": "🧪 تست Inline"
-                        }
-                    ]
-                }
-            ]
-        }
-    }
-
-    print("🔵 TEST INLINE:")
-    print(data)
-
-    result = call_api(
-        "sendMessage",
-        data
-    )
-
-    print("🔵 TEST INLINE RESULT:")
-    print(result)
-
-    return result
-
-# ==========================================
 # Remove Chat Keypad
 # ==========================================
 
@@ -345,3 +271,32 @@ def delete_message(
             "message_id": message_id
         }
     )
+
+# ==========================================
+# Edit Message Text
+# ==========================================
+
+def edit_message_text(
+    chat_id,
+    message_id,
+    text
+):
+
+    data = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": text
+    }
+
+    print("📝 EDIT MESSAGE:")
+    print(data)
+
+    result = call_api(
+        "editMessageText",
+        data
+    )
+
+    print("📝 EDIT MESSAGE RESULT:")
+    print(result)
+
+    return result
