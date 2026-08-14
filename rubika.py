@@ -207,6 +207,39 @@ def send_keypad(
         data
     )
 
+# ==========================================
+# Edit Chat Keypad
+# ==========================================
+
+def edit_chat_keypad(
+    chat_id,
+    buttons
+):
+
+    rows = build_rows(buttons)
+
+    data = {
+        "chat_id": chat_id,
+        "chat_keypad_type": "New",
+        "chat_keypad": {
+            "rows": rows,
+            "resize_keyboard": True
+        }
+    }
+
+    print("🔵 EDIT CHAT KEYPAD:")
+    print(data)
+
+    result = call_api(
+        "editChatKeypad",
+        data
+    )
+
+    print("🔵 EDIT CHAT KEYPAD RESULT:")
+    print(result)
+
+    return result
+
 
 # ==========================================
 # Remove Chat Keypad
