@@ -1,14 +1,48 @@
-from rubika import send_message
+from rubika import (
+    send_message,
+    edit_message_text
+)
 
 from handlers.esm_buttons import (
+    show_categories_again,
     show_after_save,
-    show_waiting,
-    ask_for_answer
+    show_waiting
 )
 
 
 # ==========================================
-# بازیکن در حال نوشتن جواب
+# پیام وضعیت بازی
+# ==========================================
+
+def update_status(
+    room,
+    player,
+    text
+):
+
+    message_ids = room.data.get(
+        "status_messages",
+        {}
+    )
+
+    message_id = message_ids.get(
+        player
+    )
+
+    if not message_id:
+        return False
+
+    result = edit_message_text(
+        player,
+        message_id,
+        text
+    )
+
+    return result
+
+
+# ==========================================
+# تنظیم حالت انتظار جواب
 # ==========================================
 
 def set_waiting(
@@ -17,9 +51,10 @@ def set_waiting(
     category
 ):
 
-    if "waiting" not in room.data:
-
-        room.data["waiting"] = {}
+    room.data.setdefault(
+        "waiting",
+        {}
+    )
 
     room.data["waiting"][player] = category
 
@@ -33,10 +68,6 @@ def choose_category(
     player,
     category
 ):
-
-    if "answers" not in room.data:
-
-        room.data["answers"] = {}
 
     if player not in room.data["answers"]:
 
@@ -57,36 +88,66 @@ def choose_category(
         "؟"
     )
 
-    # اگر جواب قبلی وجود داشته باشد
+    # --------------------------------------
+    # تغییر کی‌پد بدون پیام جدید
+    # --------------------------------------
+
+    from handlers.esm_buttons import show_answer_mode
+
+    show_answer_mode(
+        player
+    )
+
+    # --------------------------------------
+    # متن وضعیت را ویرایش می‌کنیم
+    # --------------------------------------
+
     if old_answer:
 
-        send_message(
-            player,
-            (
-                f"✏️ جواب قبلی {category}:\n\n"
-                f"«{old_answer}»\n\n"
-                "🔄 جواب جدید را ارسال کن تا جایگزین شود."
-            )
+        text = (
+            "✏️ ویرایش جواب\n\n"
+            f"🔤 حرف: {letter}\n"
+            f"📚 دسته: {category}\n\n"
+            f"📝 جواب قبلی: {old_answer}\n\n"
+            "جواب جدیدت را ارسال کن."
         )
 
     else:
 
-        send_message(
-            player,
-            (
-                f"✍️ دسته: {category}\n\n"
-                f"🔤 حرف: {letter}\n\n"
-                "جوابت را ارسال کن."
-            )
+        text = (
+            "✍️ نوشتن جواب\n\n"
+            f"🔤 حرف: {letter}\n"
+            f"📚 دسته: {category}\n\n"
+            "جوابت را ارسال کن."
         )
 
-    # کی‌پد را فقط به حالت انصراف تغییر می‌دهیم
-
-    ask_for_answer(
+    if not update_status(
+        room,
         player,
-        category,
-        letter
-    )
+        text
+    ):
+
+        # فقط اگر پیام وضعیت وجود نداشت
+        # یک پیام ساخته می‌شود
+        result = send_message(
+            player,
+            text
+        )
+
+        message_id = (
+            result
+            .get("data", {})
+            .get("message_id")
+        )
+
+        room.data.setdefault(
+            "status_messages",
+            {}
+        )
+
+        room.data["status_messages"][player] = message_id
+
+    return True
 
 
 # ==========================================
@@ -102,7 +163,9 @@ def save_answer(
     waiting = room.data.get(
         "waiting",
         {}
-    ).get(player)
+    ).get(
+        player
+    )
 
     if waiting is None:
 
@@ -112,73 +175,52 @@ def save_answer(
 
     if not text:
 
-        send_message(
-            player,
-            "❌ جواب نمی‌تواند خالی باشد."
-        )
-
         return False
-
-    letter = room.data.get(
-        "letter"
-    )
-
-    # ==========================================
-    # بررسی حرف
-    # ==========================================
-
-    if letter:
-
-        if not text.startswith(letter):
-
-            send_message(
-                player,
-                (
-                    f"❌ جواب باید با حرف «{letter}» شروع شود.\n\n"
-                    f"دسته: {waiting}"
-                )
-            )
-
-            return False
-
-    # ==========================================
-    # ذخیره
-    # ==========================================
-
-    if "answers" not in room.data:
-
-        room.data["answers"] = {}
-
-    if player not in room.data["answers"]:
-
-        room.data["answers"][player] = {}
 
     room.data["answers"][player][waiting] = text
 
-    # حذف حالت انتظار
     room.data["waiting"].pop(
         player,
         None
     )
 
-    send_message(
-        player,
-        (
-            f"✅ جواب {waiting} ذخیره شد.\n\n"
-            f"📝 جواب: {text}"
-        )
+    category = waiting
+
+    letter = room.data.get(
+        "letter",
+        "؟"
     )
 
-    # برگرداندن همان Chat Keypad دسته‌ها
+    # --------------------------------------
+    # بازگشت کی‌پد دسته‌ها
+    # --------------------------------------
+
     show_after_save(
         player
+    )
+
+    # --------------------------------------
+    # ویرایش همان پیام
+    # --------------------------------------
+
+    update_status(
+        room,
+        player,
+        (
+            "✅ جواب ذخیره شد!\n\n"
+            f"🔤 حرف: {letter}\n"
+            f"📚 دسته: {category}\n"
+            f"📝 جواب: {text}\n\n"
+            "می‌توانی دسته دیگری را انتخاب کنی "
+            "یا وقتی تمام کردی «✅ آماده‌ام» را بزن."
+        )
     )
 
     return True
 
 
 # ==========================================
-# انصراف از نوشتن جواب
+# لغو نوشتن جواب
 # ==========================================
 
 def cancel_answer(
@@ -200,21 +242,30 @@ def cancel_answer(
         None
     )
 
-    send_message(
-        player,
-        "↩️ ثبت جواب لغو شد."
+    show_categories_again(
+        player
     )
 
-    # برگرداندن کی‌پد دسته‌ها
-    show_after_save(
-        player
+    letter = room.data.get(
+        "letter",
+        "؟"
+    )
+
+    update_status(
+        room,
+        player,
+        (
+            "↩️ انتخاب دسته\n\n"
+            f"🔤 حرف انتخاب شده: {letter}\n\n"
+            "📚 دسته موردنظرت را انتخاب کن."
+        )
     )
 
     return True
 
 
 # ==========================================
-# آماده شدن
+# آماده شدن بازیکن
 # ==========================================
 
 def ready(
@@ -222,15 +273,18 @@ def ready(
     player
 ):
 
-    if player in room.data.get(
+    ready_players = room.data.setdefault(
         "ready",
         []
-    ):
+    )
 
-        send_message(
+    if player in ready_players:
+
+        update_status(
+            room,
             player,
             (
-                "✅ تو قبلاً آماده شدی.\n"
+                "✅ تو قبلاً آماده شدی.\n\n"
                 "⏳ منتظر بقیه بازیکنان باش..."
             )
         )
@@ -241,25 +295,7 @@ def ready(
 
         return
 
-    # اگر هنوز جوابی در حال نوشتن است
-    if player in room.data.get(
-        "waiting",
-        {}
-    ):
-
-        send_message(
-            player,
-            "❌ اول جواب دسته انتخاب‌شده را ارسال کن."
-        )
-
-        return
-
-    room.data.setdefault(
-        "ready",
-        []
-    )
-
-    room.data["ready"].append(
+    ready_players.append(
         player
     )
 
@@ -267,7 +303,8 @@ def ready(
         player
     )
 
-    send_message(
+    update_status(
+        room,
         player,
         (
             "✅ آماده شدی!\n\n"
@@ -275,11 +312,7 @@ def ready(
         )
     )
 
-    # ==========================================
-    # آیا همه آماده‌اند؟
-    # ==========================================
-
-    if len(room.data["ready"]) == len(room.players):
+    if len(ready_players) == len(room.players):
 
         finish_waiting(
             room
@@ -290,9 +323,7 @@ def ready(
 # پایان انتظار
 # ==========================================
 
-def finish_waiting(
-    room
-):
+def finish_waiting(room):
 
     from handlers.esm_check import show_result
 

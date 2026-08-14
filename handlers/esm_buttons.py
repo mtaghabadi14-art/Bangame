@@ -1,7 +1,6 @@
 from rubika import (
     send_keypad,
-    edit_chat_keypad,
-    send_message
+    edit_chat_keypad
 )
 
 
@@ -24,7 +23,7 @@ CATEGORIES = [
 
 
 # ==========================================
-# ساخت کی‌پد دسته‌ها
+# ساخت کی‌پد دسته‌بندی‌ها
 # ==========================================
 
 def build_categories_keyboard():
@@ -49,15 +48,15 @@ def build_categories_keyboard():
 
 
 # ==========================================
-# نمایش دسته‌ها
-# فقط هنگام شروع بازی
+# نمایش اولیه دسته‌ها
+# فقط یک بار پیام جدید می‌سازد
 # ==========================================
 
 def show_categories(chat_id):
 
     keyboard = build_categories_keyboard()
 
-    send_keypad(
+    return send_keypad(
         chat_id,
         "📚 یکی از دسته‌ها را انتخاب کن:",
         keyboard
@@ -65,14 +64,15 @@ def show_categories(chat_id):
 
 
 # ==========================================
-# بروزرسانی همان Chat Keypad
+# بازگرداندن کی‌پد دسته‌ها
+# بدون پیام جدید
 # ==========================================
 
 def update_categories(chat_id):
 
     keyboard = build_categories_keyboard()
 
-    edit_chat_keypad(
+    return edit_chat_keypad(
         chat_id,
         keyboard
     )
@@ -80,62 +80,57 @@ def update_categories(chat_id):
 
 # ==========================================
 # بعد از ثبت جواب
+# بدون ارسال پیام جدید
 # ==========================================
 
 def show_after_save(chat_id):
 
     keyboard = build_categories_keyboard()
 
-    edit_chat_keypad(
+    return edit_chat_keypad(
         chat_id,
         keyboard
     )
 
 
 # ==========================================
-# درخواست جواب
+# حالت نوشتن جواب
 # ==========================================
 
-def ask_for_answer(
-    chat_id,
-    category,
-    letter
-):
+def show_answer_mode(chat_id):
 
-    keyboard = [
+    return edit_chat_keypad(
+        chat_id,
         [
-            "⬅️ انصراف"
+            [
+                "⬅️ انصراف"
+            ]
         ]
-    ]
-
-    # همان کی‌پد را تغییر می‌دهیم
-    edit_chat_keypad(
-        chat_id,
-        keyboard
-    )
-
-    send_message(
-        chat_id,
-        (
-            f"🔤 حرف: {letter}\n\n"
-            f"✍️ جواب بخش {category} را ارسال کن."
-        )
     )
 
 
 # ==========================================
-# حالت انتظار
+# بعد از آماده شدن
 # ==========================================
 
 def show_waiting(chat_id):
 
-    keyboard = [
-        [
-            "🚪 خروج از بازی"
-        ]
-    ]
-
-    edit_chat_keypad(
+    return edit_chat_keypad(
         chat_id,
-        keyboard
+        [
+            [
+                "🚪 خروج از بازی"
+            ]
+        ]
+    )
+
+
+# ==========================================
+# بازگشت از حالت نوشتن جواب
+# ==========================================
+
+def show_categories_again(chat_id):
+
+    return update_categories(
+        chat_id
     )

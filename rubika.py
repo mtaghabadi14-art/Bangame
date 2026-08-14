@@ -128,7 +128,6 @@ def send_message(
 
 def build_button(button):
 
-    # اگر دیکشنری باشد
     if isinstance(button, dict):
 
         button_id = button.get(
@@ -141,11 +140,9 @@ def build_button(button):
             str(button_id)
         )
 
-    # اگر فقط متن باشد
     else:
 
         button_id = str(button)
-
         button_text = str(button)
 
     return {
@@ -182,6 +179,7 @@ def build_rows(buttons):
 
 # ==========================================
 # Send Chat Keypad
+# فقط برای ساخت اولیه کی‌پد
 # ==========================================
 
 def send_keypad(
@@ -207,8 +205,10 @@ def send_keypad(
         data
     )
 
+
 # ==========================================
 # Edit Chat Keypad
+# برای تغییر کی‌پد بدون ساخت پیام جدید
 # ==========================================
 
 def edit_chat_keypad(
@@ -305,34 +305,6 @@ def delete_message(
         }
     )
 
-# ==========================================
-# Edit Message Text
-# ==========================================
-
-def edit_message_text(
-    chat_id,
-    message_id,
-    text
-):
-
-    data = {
-        "chat_id": chat_id,
-        "message_id": message_id,
-        "text": text
-    }
-
-    print("📝 EDIT MESSAGE:")
-    print(data)
-
-    result = call_api(
-        "editMessageText",
-        data
-    )
-
-    print("📝 EDIT MESSAGE RESULT:")
-    print(result)
-
-    return result
 
 # ==========================================
 # Edit Chat Keypad

@@ -1,14 +1,17 @@
 import random
 
-from rubika import send_message
+from rubika import (
+    send_message,
+    edit_message_text
+)
 
 from rooms.manager import (
+    delete_room,
     start_game
 )
 
 from handlers.esm_buttons import (
-    show_categories,
-    CATEGORIES
+    show_categories
 )
 
 from handlers.esm_answers import (
@@ -24,6 +27,24 @@ from handlers.esm_answers import (
 # ==========================================
 
 games = {}
+
+
+# ==========================================
+# دسته‌بندی‌ها
+# ==========================================
+
+categories = [
+    "👤 اسم",
+    "🏠 فامیل",
+    "🍎 میوه",
+    "🍔 غذا",
+    "🎨 رنگ",
+    "📦 اشیا",
+    "🐶 حیوان",
+    "🌍 شهر یا کشور",
+    "🖐 اعضای بدن",
+    "🎬 فیلم یا سریال"
+]
 
 
 # ==========================================
@@ -74,14 +95,12 @@ def show_lobby(room):
         esm_lobby_menu(
             player,
             room,
-            is_host=(
-                player == room.host
-            )
+            is_host=(player == room.host)
         )
 
 
 # ==========================================
-# شروع بازی توسط میزبان
+# شروع توسط میزبان
 # ==========================================
 
 def start_by_host(
@@ -135,48 +154,42 @@ def start(room):
     if len(room.players) < room.min_players:
         return
 
-    # شروع اتاق
     start_game(
         room
     )
 
-    # انتخاب حرف
     letter = random.choice(
         letters
     )
 
-    # ======================================
-    # ساخت اطلاعات بازی
-    # ======================================
-
     room.data["letter"] = letter
-
     room.data["answers"] = {}
-
     room.data["ready"] = []
-
     room.data["waiting"] = {}
+    room.data["status_messages"] = {}
 
-    # برای هر بازیکن جواب خالی
     for player in room.players:
 
         room.data["answers"][player] = {}
 
-    # ======================================
-    # ارسال بازی به بازیکنان
-    # ======================================
-
     for player in room.players:
 
-        send_message(
+        result = send_message(
             player,
             (
                 "✍️ بازی اسم و فامیل شروع شد!\n\n"
                 f"🔤 حرف انتخاب شده: {letter}\n\n"
-                "📚 برای هر دسته جواب خودت را وارد کن.\n"
-                "در پایان روی «✅ آماده‌ام» بزن."
+                "📚 یکی از دسته‌ها را انتخاب کن."
             )
         )
+
+        message_id = (
+            result
+            .get("data", {})
+            .get("message_id")
+        )
+
+        room.data["status_messages"][player] = message_id
 
         show_categories(
             player
@@ -193,17 +206,15 @@ def select_category(
     category
 ):
 
-    if category not in CATEGORIES:
+    if category not in categories:
 
         return False
 
-    choose_category(
+    return choose_category(
         room,
         player,
         category
     )
-
-    return True
 
 
 # ==========================================
@@ -245,7 +256,6 @@ def player_ready(
 def get_game_data(room):
 
     return {
-
         "letter": room.data.get(
             "letter"
         ),
@@ -258,18 +268,12 @@ def get_game_data(room):
         "ready": room.data.get(
             "ready",
             []
-        ),
-
-        "waiting": room.data.get(
-            "waiting",
-            {}
         )
-
     }
 
 
 # ==========================================
-# مدیریت پیام بازیکن
+# مدیریت پیام
 # ==========================================
 
 def handle(
@@ -278,9 +282,9 @@ def handle(
     text
 ):
 
-    # ======================================
+    # --------------------------------------
     # شروع بازی
-    # ======================================
+    # --------------------------------------
 
     if text == "▶️ شروع بازی":
 
@@ -291,24 +295,14 @@ def handle(
 
         return True
 
-    # ======================================
-    # خروج از بازی
-    # ======================================
+    # --------------------------------------
+    # خروج
+    # --------------------------------------
 
-    if text == "🚪 خروج از بازی":
-
-        exit_game(
-            room,
-            player
-        )
-
-        return True
-
-    # ======================================
-    # خروج از اتاق
-    # ======================================
-
-    if text == "🚪 خروج از اتاق":
+    if text in (
+        "🚪 خروج از بازی",
+        "🚪 خروج از اتاق"
+    ):
 
         exit_game(
             room,
@@ -317,9 +311,9 @@ def handle(
 
         return True
 
-    # ======================================
-    # انصراف از نوشتن جواب
-    # ======================================
+    # --------------------------------------
+    # لغو جواب
+    # --------------------------------------
 
     if text == "⬅️ انصراف":
 
@@ -330,9 +324,9 @@ def handle(
 
         return True
 
-    # ======================================
-    # آماده شدن
-    # ======================================
+    # --------------------------------------
+    # آماده
+    # --------------------------------------
 
     if text == "✅ آماده‌ام":
 
@@ -343,11 +337,11 @@ def handle(
 
         return True
 
-    # ======================================
+    # --------------------------------------
     # انتخاب دسته
-    # ======================================
+    # --------------------------------------
 
-    if text in CATEGORIES:
+    if text in categories:
 
         select_category(
             room,
@@ -357,9 +351,9 @@ def handle(
 
         return True
 
-    # ======================================
-    # ذخیره جواب
-    # ======================================
+    # --------------------------------------
+    # ثبت جواب
+    # --------------------------------------
 
     if player in room.data.get(
         "waiting",
@@ -378,7 +372,7 @@ def handle(
 
 
 # ==========================================
-# گرفتن جواب‌های بازیکن
+# جواب‌های بازیکن
 # ==========================================
 
 def get_player_answers(
@@ -409,7 +403,7 @@ def clear_answers(room):
 
 
 # ==========================================
-# خروج از بازی
+# خروج
 # ==========================================
 
 def exit_game(
@@ -420,16 +414,6 @@ def exit_game(
     from rooms.manager import leave_room
     from handlers.menu import room_menu
 
-    # حذف حالت انتظار
-    room.data.get(
-        "waiting",
-        {}
-    ).pop(
-        player,
-        None
-    )
-
-    # خارج کردن بازیکن
     leave_room(
         player
     )
@@ -451,25 +435,21 @@ def exit_game(
 def finish_round(room):
 
     from handlers.menu import room_menu
-    from rooms.manager import delete_room
 
-    # پیام پایان
     for player in room.players:
 
         send_message(
             player,
             (
-                "🎉 دور بازی تمام شد!\n\n"
-                "📊 نتیجه در حال نمایش است..."
+                "🎉 دور بازی تمام شد!\n"
+                "امتیازدهی به‌زودی اضافه می‌شود."
             )
         )
 
-    # حذف اتاق
     delete_room(
         room.room_id
     )
 
-    # منوی اتاق
     for player in room.players:
 
         room_menu(
@@ -484,10 +464,9 @@ def finish_round(room):
 def reset_game(room):
 
     room.data["answers"] = {}
-
     room.data["ready"] = []
-
     room.data["waiting"] = {}
+    room.data["status_messages"] = {}
 
     for player in room.players:
 
