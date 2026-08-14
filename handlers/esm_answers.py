@@ -178,6 +178,42 @@ def save_answer(
 
 
 # ==========================================
+# انصراف از نوشتن جواب
+# ==========================================
+
+def cancel_answer(
+    room,
+    player
+):
+
+    waiting = room.data.get(
+        "waiting",
+        {}
+    )
+
+    if player not in waiting:
+
+        return False
+
+    waiting.pop(
+        player,
+        None
+    )
+
+    send_message(
+        player,
+        "↩️ ثبت جواب لغو شد."
+    )
+
+    # برگرداندن کی‌پد دسته‌ها
+    show_after_save(
+        player
+    )
+
+    return True
+
+
+# ==========================================
 # آماده شدن
 # ==========================================
 
