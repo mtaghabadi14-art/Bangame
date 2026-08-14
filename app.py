@@ -21,6 +21,8 @@ from games import reaction as reaction_game
 
 from rubika import (
     send_message,
+    send_keypad,
+    edit_chat_keypad
 )
 
 from database import (
@@ -970,6 +972,53 @@ async def receive_update(request: Request):
             }
 
 
+        # ==========================================
+        # تست Edit Chat Keypad
+        # ==========================================
+
+        elif text == "🧪 تست ویرایش کیپد":
+
+            buttons = [
+                [
+                    {
+                        "id": "test_1",
+                        "text": "🟦 دکمه اول"
+                    },
+                    {
+                        "id": "test_2",
+                        "text": "🟥 دکمه دوم"
+                    }
+                ]
+            ]
+
+            result = send_keypad(
+                chat_id,
+                "🧪 تست Chat Keypad\n\nاین کیپد باید قابل ویرایش باشد.",
+                buttons
+            )
+
+            edit_chat_keypad(
+                chat_id,
+                [
+                    [
+                        {
+                            "id": "test_1_new",
+                            "text": "✅ دکمه تغییر کرد"
+                        },
+                        {
+                            "id": "test_2_new",
+                            "text": "🔵 دکمه دوم"
+                        }
+                    ]
+                ]
+            )
+
+            return {
+                "ok": True
+            }
+
+
+     
 
         # ==========================================
         # پیام ناشناخته
