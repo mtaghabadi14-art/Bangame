@@ -338,3 +338,32 @@ def edit_chat_keypad(
     print(result)
 
     return result
+
+# ==========================================
+# Edit Message Text
+# ==========================================
+
+def edit_message_text(
+    chat_id,
+    message_id,
+    text
+):
+
+    data = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": text
+    }
+
+    print("📝 EDIT MESSAGE:")
+    print(data)
+
+    result = call_api(
+        "editMessageText",
+        data
+    )
+
+    print("📝 EDIT MESSAGE RESULT:")
+    print(result)
+
+    return result
