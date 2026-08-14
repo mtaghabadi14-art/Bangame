@@ -137,10 +137,6 @@ async def receive_update(request: Request):
 
         data = await request.json()
 
-        print("================================")
-        print("📩 RAW UPDATE:")
-        print(data)
-        print("================================")
 
         update = data.get(
             "update",
@@ -166,12 +162,8 @@ async def receive_update(request: Request):
 
         button_id = aux_data.get("button_id")
 
-        print(
-            "🔘 BUTTON:",
-            button_id,
-            "| TEXT:",
-            text
-        )
+        if button_id:
+            print(f"🔘 {button_id}")
 
 
         # ==========================================
