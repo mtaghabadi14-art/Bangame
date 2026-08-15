@@ -7,6 +7,10 @@ from database import get_nickname
 
 from handlers.esm_buttons import CATEGORIES
 
+from rooms.manager import delete_room
+
+from handlers.menu import room_menu
+
 
 # ==========================================
 # گرفتن نام نمایشی بازیکن
@@ -190,7 +194,6 @@ def start_protest(
         room
     )
 
-    # اگر اعتراض دیگری در حال بررسی است
     if room.data.get("protest"):
 
         send_message(
@@ -345,21 +348,13 @@ def select_protest_player(
 
     room.data["protest_votes"] = {}
 
-    # --------------------------------------
-    # بازیکن معترض رأی نمی‌دهد
-    # --------------------------------------
-
-    opponents = [
+    voters = [
         p
         for p in room.players
         if p != player
     ]
 
-    # --------------------------------------
-    # ارسال درخواست رأی
-    # --------------------------------------
-
-    for voter in opponents:
+    for voter in voters:
 
         send_keypad(
             voter,
@@ -402,7 +397,7 @@ def select_protest_player(
 
 
 # ==========================================
-# ثبت رأی
+# ثبت رأی اعتراض
 # ==========================================
 
 def vote_protest(
@@ -428,6 +423,10 @@ def vote_protest(
 
         return True
 
+    if voter not in room.players:
+
+        return False
+
     votes = room.data.setdefault(
         "protest_votes",
         {}
@@ -439,17 +438,12 @@ def vote_protest(
         else "reject"
     )
 
-    # --------------------------------------
-    # رأی لازم
-    # --------------------------------------
-
     required_voters = [
         p
         for p in room.players
         if p != protest["protester"]
     ]
 
-    # هنوز همه رأی نداده‌اند
     if len(votes) < len(required_voters):
 
         send_message(
@@ -458,10 +452,6 @@ def vote_protest(
         )
 
         return True
-
-    # --------------------------------------
-    # بررسی نتیجه
-    # --------------------------------------
 
     rejected = any(
         vote == "reject"
@@ -477,13 +467,6 @@ def vote_protest(
             f"📝 جواب: {protest['answer'] or '❌ بدون جواب'}"
         )
 
-        for player in room.players:
-
-            send_message(
-                player,
-                result_text
-            )
-
     else:
 
         result_text = (
@@ -494,26 +477,98 @@ def vote_protest(
             "⚠️ نتیجه این اعتراض تأیید شد."
         )
 
-        for player in room.players:
+    for player in room.players:
 
-            send_message(
-                player,
-                result_text
-            )
-
-    # --------------------------------------
-    # پاک کردن اعتراض
-    # --------------------------------------
+        send_message(
+            player,
+            result_text
+        )
 
     room.data["protest"] = None
     room.data["protest_votes"] = {}
+
     room.data.pop(
         "protest_selector",
         None
     )
+
     room.data.pop(
         "protest_category",
         None
+    )
+
+    return True
+
+
+# ==========================================
+# بازگشت به کافه بازی
+# ==========================================
+
+def return_to_cafe(
+    room,
+    player
+):
+
+    returned_players = room.data.setdefault(
+        "returned_players",
+        []
+    )
+
+    # --------------------------------------
+    # قبلاً برگشته
+    # --------------------------------------
+
+    if player in returned_players:
+
+        room_menu(
+            player
+        )
+
+        return True
+
+    # --------------------------------------
+    # ثبت بازگشت
+    # --------------------------------------
+
+    returned_players.append(
+        player
+    )
+
+    room_menu(
+        player
+    )
+
+    # --------------------------------------
+    # بررسی بازگشت همه
+    # --------------------------------------
+
+    total_players = len(
+        room.players
+    )
+
+    returned_count = len(
+        returned_players
+    )
+
+    if returned_count >= total_players:
+
+        delete_room(
+            room.room_id
+        )
+
+        return True
+
+    # --------------------------------------
+    # هنوز بازیکن دیگری مانده
+    # --------------------------------------
+
+    send_message(
+        player,
+        (
+            "🏠 به کافه بازی برگشتی.\n\n"
+            f"⏳ منتظر بقیه بازیکنان...\n"
+            f"👥 {returned_count}/{total_players} برگشته‌اند."
+        )
     )
 
     return True
@@ -537,6 +592,8 @@ def show_result(room):
     init_protest(
         room
     )
+
+    room.data["returned_players"] = []
 
     text = (
         "🎉 نتیجه اسم و فامیل\n\n"
@@ -643,8 +700,8 @@ def show_result(room):
                 ],
                 [
                     {
-                        "id": "esm_exit_result",
-                        "text": "🚪 خروج"
+                        "id": "esm_return_cafe",
+                        "text": "🏠 بازگشت به کافه بازی"
                     }
                 ]
             ]

@@ -313,6 +313,21 @@ def handle(
         return True
 
     # --------------------------------------
+    # بازگشت به کافه بازی
+    # --------------------------------------
+
+    if text == "🏠 بازگشت به کافه بازی":
+
+        from handlers.esm_check import return_to_cafe
+
+        return_to_cafe(
+            room,
+            player
+        )
+
+        return True
+
+    # --------------------------------------
     # اعتراض به نتیجه
     # --------------------------------------
 
@@ -389,6 +404,7 @@ def handle(
             if text == f"👤 {nickname}":
 
                 target = opponent
+
                 break
 
         if target:
