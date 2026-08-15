@@ -10,6 +10,7 @@ from handlers import tictactoe
 from handlers import rps
 from handlers import esm_famil
 from handlers.memory_online_buttons import memory_lobby_menu
+from handlers import uno
 
 from rooms.manager import (
     create_room,
@@ -158,6 +159,33 @@ def create_memory_online_room(chat_id):
 
 
 # ==========================================
+# ساخت اتاق UNO
+# ==========================================
+
+def create_uno_room(chat_id):
+
+    room = create_room(
+        game="uno",
+        host=chat_id,
+        min_players=2,
+        max_players=4
+    )
+
+    if room is None:
+
+        send_message(
+            chat_id,
+            "❌ ابتدا از اتاق فعلی خارج شو."
+        )
+
+        return
+
+    uno.show_lobby(
+        room
+    )
+
+
+# ==========================================
 # درخواست ورود به اتاق
 # ==========================================
 
@@ -236,6 +264,18 @@ def receive_room_code(chat_id, code):
                 room,
                 is_host=(player == room.host)
             )
+
+        return True
+
+    # ==========================================
+    # UNO → ورود به Lobby
+    # ==========================================
+
+    if room.game == "uno":
+
+        uno.show_lobby(
+            room
+        )
 
         return True
 

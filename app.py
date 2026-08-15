@@ -59,6 +59,7 @@ from handlers.rooms import (
     create_tictactoe_room,
     create_esm_famil_room,
     create_memory_online_room,
+    create_uno_room,
     request_join,
     receive_room_code,
     exit_room
@@ -68,7 +69,8 @@ from handlers import (
     tictactoe as ttt_handler,
     rps as rps_handler,
     esm_famil as esm_handler,
-    memory_online as memory_online_handler
+    memory_online as memory_online_handler,
+    uno as uno_handler
 )
 
 from rooms.manager import get_player_room
@@ -415,6 +417,25 @@ async def receive_update(request: Request):
                     }
 
 
+                # ==========================================
+                # UNO
+                # ==========================================
+
+                if (
+                    room.game == "uno"
+                ):
+
+                    uno_handler.handle(
+                        room,
+                        chat_id,
+                        button_id
+                    )
+
+                    return {
+                        "ok": True
+                    }
+
+
         # ==========================================
         # /start
         # ==========================================
@@ -684,6 +705,21 @@ async def receive_update(request: Request):
         elif text == "🧠 حافظه آنلاین":
 
             create_memory_online_room(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
+        # ==========================================
+        # ساخت اتاق UNO
+        # ==========================================
+
+        elif text == "🃏 UNO":
+
+            create_uno_room(
                 chat_id
             )
 
