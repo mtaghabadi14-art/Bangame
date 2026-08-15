@@ -75,14 +75,37 @@ def check_answer(
 def calculate_category_score(
     letter,
     players_answers,
-    category
+    category,
+    invalid_answers=None
 ):
 
     results = {}
 
     answers = {}
 
+    if invalid_answers is None:
+
+        invalid_answers = {}
+
+    # ======================================
+    # بررسی جواب تمام بازیکنان
+    # ======================================
+
     for player, data in players_answers.items():
+
+        # ----------------------------------
+        # اگر جواب قبلاً با اعتراض باطل شده
+        # ----------------------------------
+
+        player_invalid = invalid_answers.get(
+            player,
+            []
+        )
+
+        if category in player_invalid:
+
+            answers[player] = None
+            continue
 
         answer = data.get(
             category,
@@ -104,11 +127,19 @@ def calculate_category_score(
 
             answers[player] = None
 
+    # ======================================
+    # جواب‌های صحیح
+    # ======================================
+
     correct_answers = [
         answer
         for answer in answers.values()
         if answer is not None
     ]
+
+    # ======================================
+    # امتیازدهی
+    # ======================================
 
     for player, answer in answers.items():
 
@@ -143,18 +174,32 @@ def check_game(room):
         {}
     )
 
+    invalid_answers = room.data.get(
+        "invalid_answers",
+        {}
+    )
+
     scores = {}
+
+    # ======================================
+    # مقداردهی اولیه
+    # ======================================
 
     for player in players_answers:
 
         scores[player] = 0
+
+    # ======================================
+    # بررسی دسته‌ها
+    # ======================================
 
     for category in CATEGORIES:
 
         result = calculate_category_score(
             letter,
             players_answers,
-            category
+            category,
+            invalid_answers
         )
 
         for player, score in result.items():
@@ -162,7 +207,6 @@ def check_game(room):
             scores[player] += score
 
     return scores
-
 
 # ==========================================
 # آماده‌سازی سیستم اعتراض
@@ -419,24 +463,36 @@ def vote_protest(
 
         return True
 
+    # معترض نمی‌تواند به اعتراض خودش رأی بدهد
     if voter == protest["protester"]:
 
         return True
-
-    if voter not in room.players:
-
-        return False
 
     votes = room.data.setdefault(
         "protest_votes",
         {}
     )
 
+    # جلوگیری از رأی دوباره
+    if voter in votes:
+
+        send_message(
+            voter,
+            "⚠️ رأی تو قبلاً ثبت شده است."
+        )
+
+        return True
+
+    # ثبت رأی
     votes[voter] = (
         "approve"
         if approve
         else "reject"
     )
+
+    # ==========================================
+    # بازیکنانی که باید رأی بدهند
+    # ==========================================
 
     required_voters = [
         p
@@ -444,6 +500,7 @@ def vote_protest(
         if p != protest["protester"]
     ]
 
+    # هنوز همه رأی نداده‌اند
     if len(votes) < len(required_voters):
 
         send_message(
@@ -453,10 +510,18 @@ def vote_protest(
 
         return True
 
+    # ==========================================
+    # بررسی نتیجه رأی
+    # ==========================================
+
     rejected = any(
         vote == "reject"
         for vote in votes.values()
     )
+
+    # ==========================================
+    # اعتراض رد شد
+    # ==========================================
 
     if rejected:
 
@@ -464,27 +529,70 @@ def vote_protest(
             "❌ اعتراض رد شد.\n\n"
             f"📚 دسته: {protest['category']}\n"
             f"👤 بازیکن: {get_player_name(protest['target'])}\n"
-            f"📝 جواب: {protest['answer'] or '❌ بدون جواب'}"
+            f"📝 جواب: "
+            f"{protest['answer'] or '❌ بدون جواب'}\n\n"
+            "📊 نتیجه قبلی همچنان معتبر است."
         )
+
+        for player in room.players:
+
+            send_message(
+                player,
+                result_text
+            )
+
+    # ==========================================
+    # اعتراض تأیید شد
+    # ==========================================
 
     else:
 
+        category = protest["category"]
+        target = protest["target"]
+
+        # --------------------------------------
+        # ثبت اعتراض تأییدشده
+        # --------------------------------------
+
+        invalid_answers = room.data.setdefault(
+            "invalid_answers",
+            {}
+        )
+
+        invalid_categories = invalid_answers.setdefault(
+            target,
+            []
+        )
+
+        if category not in invalid_categories:
+
+            invalid_categories.append(
+                category
+            )
+
         result_text = (
             "✅ اعتراض تأیید شد.\n\n"
-            f"📚 دسته: {protest['category']}\n"
-            f"👤 بازیکن: {get_player_name(protest['target'])}\n"
-            f"📝 جواب: {protest['answer'] or '❌ بدون جواب'}\n\n"
-            "⚠️ نتیجه این اعتراض تأیید شد."
+            f"📚 دسته: {category}\n"
+            f"👤 بازیکن: {get_player_name(target)}\n"
+            f"📝 جواب: "
+            f"{protest['answer'] or '❌ بدون جواب'}\n\n"
+            "⚠️ این جواب نامعتبر شد.\n"
+            "📊 امتیاز این دسته اصلاح شد."
         )
 
-    for player in room.players:
+        for player in room.players:
 
-        send_message(
-            player,
-            result_text
-        )
+            send_message(
+                player,
+                result_text
+            )
+
+    # ==========================================
+    # پاک کردن اعتراض فعلی
+    # ==========================================
 
     room.data["protest"] = None
+
     room.data["protest_votes"] = {}
 
     room.data.pop(
@@ -495,6 +603,14 @@ def vote_protest(
     room.data.pop(
         "protest_category",
         None
+    )
+
+    # ==========================================
+    # نمایش نتیجه جدید
+    # ==========================================
+
+    show_result(
+        room
     )
 
     return True
