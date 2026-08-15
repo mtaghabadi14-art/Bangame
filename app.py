@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 import time
+import socket
 
 from handlers import leaderboard
 from handlers import typing as typing_handler
@@ -1089,6 +1090,60 @@ async def receive_update(request: Request):
     return {
         "ok": True
     }
+
+
+
+def test_rubika_connection():
+
+    host = "botapi.rubika.ir"
+
+    try:
+        ip = socket.gethostbyname(host)
+
+        print(f"🌐 Rubika DNS → {ip}")
+
+        sock = socket.create_connection(
+            (host, 443),
+            timeout=10
+        )
+
+        sock.close()
+
+        print("🔗 Rubika HTTPS → CONNECTED")
+
+        return True
+
+    except socket.gaierror:
+
+        print("❌ Rubika DNS → FAILED")
+
+        return False
+
+    except socket.timeout:
+
+        print("⏱️ Rubika HTTPS → TIMEOUT")
+
+        return False
+
+    except Exception:
+
+        print("❌ Rubika HTTPS → FAILED")
+
+        return False
+
+
+if __name__ == "__main__":
+
+    test_rubika_connection()
+
+    import uvicorn
+
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=False
+    )
 
 
 # ==========================================
