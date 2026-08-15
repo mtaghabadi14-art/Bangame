@@ -9,6 +9,7 @@ from handlers.menu import (
 from handlers import tictactoe
 from handlers import rps
 from handlers import esm_famil
+from handlers import puzzle_online
 
 from handlers.memory_online_buttons import (
     memory_lobby_menu
@@ -202,6 +203,30 @@ def create_uno_room(chat_id):
         f"👥 بازیکنان: 1 / 4\n\n"
         f"📨 کد اتاق را برای دوستانت بفرست.\n"
         f"⏳ منتظر بازیکنان..."
+    )
+
+#ساخت اتاق پازل آنلاین 
+
+def create_puzzle_online_room(chat_id):
+
+    room = create_room(
+        game="puzzle_online",
+        host=chat_id,
+        min_players=2,
+        max_players=8
+    )
+
+    if room is None:
+
+        send_message(
+            chat_id,
+            "❌ ابتدا از اتاق فعلی خارج شو."
+        )
+
+        return
+
+    puzzle_online.show_lobby(
+        room
     )
 
 

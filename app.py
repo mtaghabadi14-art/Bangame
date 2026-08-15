@@ -60,6 +60,7 @@ from handlers.rooms import (
     create_esm_famil_room,
     create_memory_online_room,
     create_uno_room,
+    create_puzzle_online_room,
     request_join,
     receive_room_code,
     exit_room
@@ -70,7 +71,8 @@ from handlers import (
     rps as rps_handler,
     esm_famil as esm_handler,
     memory_online as memory_online_handler,
-    uno as uno_handler
+    uno as uno_handler,
+    puzzle_online as puzzle_online_handler
 )
 
 from rooms.manager import get_player_room
@@ -438,6 +440,54 @@ async def receive_update(request: Request):
                     }
 
 
+
+            # ==========================================
+            # پازل چندنفره
+            # ==========================================
+
+            if room.game == "puzzle_online":
+
+                # شروع بازی
+                if text == "▶️ شروع پازل":
+
+                    puzzle_online_handler.start_game(
+                        room,
+                        chat_id
+                    )
+
+                    return {
+                        "ok": True
+                    }
+
+                # خروج
+                if (
+                    text == "🚪 خروج از بازی"
+                    or button_id == "puzzle_exit"
+                ):
+
+                    puzzle_online_handler.exit_game(
+                        room,
+                        chat_id
+                    )
+
+                    return {
+                        "ok": True
+                    }
+
+                # جواب سؤال
+                if room.started and text:
+
+                    puzzle_online_handler.receive_answer(
+                        room,
+                        chat_id,
+                        text
+                    )
+
+                    return {
+                        "ok": True
+                    }
+
+
         # ==========================================
         # /start
         # ==========================================
@@ -722,6 +772,20 @@ async def receive_update(request: Request):
         elif text == "🃏 UNO":
 
             create_uno_room(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+        # ==========================================
+        # ساخت اتاق پازل چندنفره
+        # ==========================================
+
+        elif text == "🧩 پازل چندنفره":
+
+            create_puzzle_online_room(
                 chat_id
             )
 
