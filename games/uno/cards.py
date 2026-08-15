@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import uuid
 
 
 # ==========================================
@@ -48,12 +49,25 @@ WILD_DRAW_FOUR = "wild_draw_four"
 # Card
 # ==========================================
 
-@dataclass(frozen=True)
+@dataclass
 class Card:
 
     color: str | None
     value: str
     card_type: str
+
+    # شناسه یکتا برای هر کارت
+    card_id: str = ""
+
+    def __post_init__(self):
+
+        if not self.card_id:
+
+            self.card_id = uuid.uuid4().hex[:10]
+
+    # ==========================================
+    # نمایش کارت
+    # ==========================================
 
     def display(self):
 
@@ -93,7 +107,19 @@ class Card:
         return "🃏"
 
 
-def card_matches(card, top_card, current_color):
+# ==========================================
+# بررسی قابل بازی بودن کارت
+# ==========================================
+
+def card_matches(
+    card,
+    top_card,
+    current_color
+):
+
+    if top_card is None:
+
+        return True
 
     # Wild ها همیشه قابل بازی هستند
     if card.card_type in (
@@ -108,7 +134,7 @@ def card_matches(card, top_card, current_color):
 
         return True
 
-    # عدد یا نوع مشابه
+    # نوع مشابه کارت‌های ویژه
     if card.card_type == top_card.card_type:
 
         if card.card_type != NUMBER:

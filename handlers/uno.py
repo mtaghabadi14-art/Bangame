@@ -1,5 +1,4 @@
 from rubika import send_message, send_keypad
-from database import get_nickname
 
 from games.uno.cards import (
     RED,
@@ -32,31 +31,6 @@ COLOR_PREFIX = "uno_color_"
 
 
 # ==========================================
-# گرفتن نام نمایشی بازیکن
-# ==========================================
-
-def get_player_name(player):
-
-    try:
-
-        nickname = get_nickname(
-            player
-        )
-
-        if nickname:
-            return str(nickname)
-
-    except Exception as e:
-
-        print(
-            "UNO nickname error:",
-            e
-        )
-
-    return "بازیکن"
-
-
-# ==========================================
 # نمایش Lobby
 # ==========================================
 
@@ -66,16 +40,7 @@ def show_lobby(room):
 
         buttons = []
 
-        # --------------------------------------
-        # دکمه شروع
-        # فقط میزبان + حداقل 2 بازیکن
-        # --------------------------------------
-
-        if (
-            player == room.host
-            and len(room.players) >= room.min_players
-            and not room.started
-        ):
+        if player == room.host:
 
             buttons.append([
                 {
@@ -84,10 +49,6 @@ def show_lobby(room):
                 }
             ])
 
-        # --------------------------------------
-        # خروج
-        # --------------------------------------
-
         buttons.append([
             {
                 "id": EXIT_ID,
@@ -95,57 +56,43 @@ def show_lobby(room):
             }
         ])
 
-        # --------------------------------------
-        # متن Lobby
-        # --------------------------------------
-
         text = (
-            "🃏 UNO — VEXON 🔥\n\n"
+            "🃏 UNO — VEXON\n\n"
             f"🔑 کد اتاق: {room.room_id}\n"
             f"👥 بازیکنان: "
             f"{len(room.players)} / "
             f"{room.max_players}\n\n"
         )
 
-        # --------------------------------------
-        # بازیکنان
-        # --------------------------------------
-
         for index, p in enumerate(
             room.players,
             start=1
         ):
 
-            name = get_player_name(
-                p
-            )
+            nickname = _nickname(p)
 
             if p == room.host:
 
                 text += (
-                    f"{index}. 👑 {name}\n"
+                    f"{index}. 👑 {nickname}\n"
                 )
 
             else:
 
                 text += (
-                    f"{index}. 🃏 {name}\n"
+                    f"{index}. 🃏 {nickname}\n"
                 )
-
-        # --------------------------------------
-        # وضعیت
-        # --------------------------------------
 
         if len(room.players) < room.min_players:
 
             text += (
-                "\n⏳ منتظر بازیکن دیگر..."
+                "\n⏳ هنوز بازیکن کافی نیست."
             )
 
         else:
 
             text += (
-                "\n✅ بازیکنان آماده‌اند!"
+                "\n✅ آماده شروع!"
             )
 
         send_keypad(
@@ -153,6 +100,28 @@ def show_lobby(room):
             text,
             buttons
         )
+
+
+# ==========================================
+# گرفتن لقب
+# ==========================================
+
+def _nickname(player):
+
+    try:
+
+        from database import get_nickname
+
+        nickname = get_nickname(player)
+
+        if nickname:
+            return nickname
+
+    except Exception:
+
+        pass
+
+    return "بازیکن"
 
 
 # ==========================================
@@ -164,7 +133,6 @@ def start_game(
     chat_id
 ):
 
-    # فقط میزبان
     if chat_id != room.host:
 
         send_message(
@@ -174,7 +142,6 @@ def start_game(
 
         return
 
-    # حداقل بازیکن
     if len(room.players) < room.min_players:
 
         send_message(
@@ -185,7 +152,6 @@ def start_game(
 
         return
 
-    # بازی قبلاً شروع شده
     if room.started:
 
         send_message(
@@ -195,21 +161,10 @@ def start_game(
 
         return
 
-    # ساخت بازی
     game = create_uno_game(
         room
     )
 
-    if game is None:
-
-        send_message(
-            chat_id,
-            "❌ ساخت بازی UNO ناموفق بود."
-        )
-
-        return
-
-    # شروع
     if not game.start():
 
         remove_uno_game(
@@ -225,7 +180,6 @@ def start_game(
 
     room.started = True
 
-    # پیام شروع
     for player in room.players:
 
         send_message(
@@ -233,10 +187,7 @@ def start_game(
             "🃏 UNO شروع شد! 🔥"
         )
 
-    # نمایش بازی
-    render_all(
-        room
-    )
+    render_all(room)
 
 
 # ==========================================
@@ -250,31 +201,25 @@ def build_game_text(
 
     top = game.top_card()
 
-    if top:
-
-        top_text = top.display()
-
-    else:
-
-        top_text = "🃏"
-
-    current_color = (
-        COLOR_EMOJIS.get(
-            game.current_color,
-            "❔"
-        )
+    top_text = (
+        top.display()
+        if top
+        else "🃏"
     )
 
-    current_player = (
-        game.current_player()
+    current_color = COLOR_EMOJIS.get(
+        game.current_color,
+        "❔"
     )
+
+    current_player = game.current_player()
 
     hand_count = len(
         game.hand(player)
     )
 
     text = (
-        "🃏 UNO — VEXON 🔥\n\n"
+        "🃏 UNO — VEXON\n\n"
         f"🃏 روی زمین: {top_text}\n"
         f"🎨 رنگ فعلی: {current_color}\n"
         f"🎴 کارت‌های Deck: "
@@ -283,19 +228,14 @@ def build_game_text(
 
     if current_player == player:
 
-        text += (
-            "🎯 نوبت توست!\n\n"
-        )
+        text += "🎯 نوبت توست!\n\n"
 
     else:
 
-        current_name = get_player_name(
-            current_player
-        )
+        nickname = _nickname(current_player)
 
         text += (
-            f"⏳ نوبت: "
-            f"{current_name}\n\n"
+            f"⏳ نوبت: {nickname}\n\n"
         )
 
     text += (
@@ -307,7 +247,7 @@ def build_game_text(
 
 
 # ==========================================
-# ساخت Keypad دست بازیکن
+# ساخت Keypad بازی
 # ==========================================
 
 def build_game_keypad(
@@ -317,9 +257,7 @@ def build_game_keypad(
 
     buttons = []
 
-    hand = game.hand(
-        player
-    )
+    hand = game.hand(player)
 
     # --------------------------------------
     # کارت‌ها
@@ -327,32 +265,28 @@ def build_game_keypad(
 
     row = []
 
-    for index, card in enumerate(hand):
+    for card in hand:
 
         row.append({
             "id": (
                 f"{CARD_PREFIX}"
-                f"{index}"
+                f"{card.card_id}"
             ),
             "text": card.display()
         })
 
         if len(row) == 3:
 
-            buttons.append(
-                row
-            )
+            buttons.append(row)
 
             row = []
 
     if row:
 
-        buttons.append(
-            row
-        )
+        buttons.append(row)
 
     # --------------------------------------
-    # برداشتن کارت
+    # Draw
     # --------------------------------------
 
     buttons.append([
@@ -376,7 +310,7 @@ def build_game_keypad(
         ])
 
     # --------------------------------------
-    # خروج
+    # Exit
     # --------------------------------------
 
     buttons.append([
@@ -395,12 +329,9 @@ def build_game_keypad(
 
 def render_all(room):
 
-    game = get_uno_game(
-        room
-    )
+    game = get_uno_game(room)
 
     if game is None:
-
         return
 
     for player in room.players:
@@ -422,40 +353,26 @@ def render_all(room):
 # منوی انتخاب رنگ
 # ==========================================
 
-def show_color_menu(
-    chat_id
-):
+def show_color_menu(chat_id):
 
     buttons = [
         [
             {
-                "id": (
-                    f"{COLOR_PREFIX}"
-                    f"{RED}"
-                ),
+                "id": f"{COLOR_PREFIX}{RED}",
                 "text": "🔴 قرمز"
             },
             {
-                "id": (
-                    f"{COLOR_PREFIX}"
-                    f"{GREEN}"
-                ),
+                "id": f"{COLOR_PREFIX}{GREEN}",
                 "text": "🟢 سبز"
             }
         ],
         [
             {
-                "id": (
-                    f"{COLOR_PREFIX}"
-                    f"{BLUE}"
-                ),
+                "id": f"{COLOR_PREFIX}{BLUE}",
                 "text": "🔵 آبی"
             },
             {
-                "id": (
-                    f"{COLOR_PREFIX}"
-                    f"{YELLOW}"
-                ),
+                "id": f"{COLOR_PREFIX}{YELLOW}",
                 "text": "🟡 زرد"
             }
         ]
@@ -477,26 +394,22 @@ def finish_game(
     game
 ):
 
-    winner = game.winner
-
-    winner_name = get_player_name(
-        winner
+    winner = _nickname(
+        game.winner
     )
 
     text = (
         "🏆 بازی UNO تمام شد! 🎉\n\n"
-        f"🥇 برنده: {winner_name}\n\n"
-        "🎴 کارت‌های باقی‌مانده:\n"
+        f"🥇 برنده: {winner}\n\n"
+        "🎴 تعداد کارت باقی‌مانده:\n"
     )
 
     for player in room.players:
 
-        name = get_player_name(
-            player
-        )
+        nickname = _nickname(player)
 
         text += (
-            f"👤 {name}: "
+            f"👤 {nickname}: "
             f"{len(game.hand(player))} کارت\n"
         )
 
@@ -505,44 +418,6 @@ def finish_game(
         send_message(
             player,
             text
-        )
-
-
-# ==========================================
-# خروج از UNO
-# ==========================================
-
-def exit_uno(
-    room,
-    chat_id
-):
-
-    from rooms.manager import delete_room
-
-    other_players = [
-        p
-        for p in room.players
-        if p != chat_id
-    ]
-
-    delete_room(
-        room.room_id
-    )
-
-    remove_uno_game(
-        room
-    )
-
-    send_message(
-        chat_id,
-        "🚪 از UNO خارج شدی."
-    )
-
-    for player in other_players:
-
-        send_message(
-            player,
-            "⚠️ یکی از بازیکنان از UNO خارج شد."
         )
 
 
@@ -556,8 +431,32 @@ def handle(
     button_id
 ):
 
+    game = get_uno_game(room)
+
     # --------------------------------------
-    # شروع از Lobby
+    # Lobby
+    # --------------------------------------
+
+    if game is None:
+
+        if button_id == START_ID:
+
+            start_game(
+                room,
+                chat_id
+            )
+
+        elif button_id == EXIT_ID:
+
+            exit_game(
+                room,
+                chat_id
+            )
+
+        return
+
+    # --------------------------------------
+    # شروع
     # --------------------------------------
 
     if button_id == START_ID:
@@ -575,7 +474,7 @@ def handle(
 
     if button_id == EXIT_ID:
 
-        exit_uno(
+        exit_game(
             room,
             chat_id
         )
@@ -583,19 +482,7 @@ def handle(
         return
 
     # --------------------------------------
-    # بازی
-    # --------------------------------------
-
-    game = get_uno_game(
-        room
-    )
-
-    if game is None:
-
-        return
-
-    # --------------------------------------
-    # بازی تمام شده
+    # پایان
     # --------------------------------------
 
     if game.finished:
@@ -641,9 +528,7 @@ def handle(
             f"{COLOR_EMOJIS[color]}"
         )
 
-        render_all(
-            room
-        )
+        render_all(room)
 
         return
 
@@ -671,9 +556,7 @@ def handle(
             "🃏 UNO گفتی! 🔥"
         )
 
-        render_all(
-            room
-        )
+        render_all(room)
 
         return
 
@@ -704,8 +587,7 @@ def handle(
                 chat_id,
                 "🎴 کارت گرفتی:\n\n"
                 f"{card.display()}\n\n"
-                "✅ این کارت قابل بازی است.\n"
-                "اگر خواستی روی دکمه‌اش بزن."
+                "✅ این کارت قابل بازی است."
             )
 
         else:
@@ -718,9 +600,7 @@ def handle(
                 "⏭️ نوبت به بازیکن بعدی رسید."
             )
 
-        render_all(
-            room
-        )
+        render_all(room)
 
         return
 
@@ -732,28 +612,15 @@ def handle(
         CARD_PREFIX
     ):
 
-        try:
+        card_id = button_id.replace(
+            CARD_PREFIX,
+            "",
+            1
+        )
 
-            index = int(
-                button_id.replace(
-                    CARD_PREFIX,
-                    "",
-                    1
-                )
-            )
-
-        except ValueError:
-
-            send_message(
-                chat_id,
-                "❌ کارت نامعتبر است."
-            )
-
-            return
-
-        result = game.play_card(
+        result = game.play_card_by_id(
             chat_id,
-            index
+            card_id
         )
 
         if not result["success"]:
@@ -803,8 +670,44 @@ def handle(
         # سایر کارت‌ها
         # ----------------------------------
 
-        render_all(
-            room
-        )
+        render_all(room)
 
         return
+
+
+# ==========================================
+# خروج از بازی
+# ==========================================
+
+def exit_game(
+    room,
+    chat_id
+):
+
+    from rooms.manager import delete_room
+
+    other_players = [
+        player
+        for player in room.players
+        if player != chat_id
+    ]
+
+    delete_room(
+        room.room_id
+    )
+
+    remove_uno_game(
+        room
+    )
+
+    send_message(
+        chat_id,
+        "🚪 از UNO خارج شدی."
+    )
+
+    for player in other_players:
+
+        send_message(
+            player,
+            "⚠️ یکی از بازیکنان از UNO خارج شد."
+        )

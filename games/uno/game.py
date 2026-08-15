@@ -33,25 +33,18 @@ class UnoGame:
 
         self.current_color = None
 
-        # آیا بازی شروع شده؟
         self.started = False
 
-        # آیا بازی تمام شده؟
         self.finished = False
 
-        # برنده
         self.winner = None
 
-        # بازیکنانی که UNO گفته‌اند
         self.uno_called = set()
 
-        # کارت‌هایی که آخرین بار Draw شده‌اند
         self.last_draw = {}
 
-        # وقتی Wild بازی شده ولی هنوز رنگ انتخاب نشده
         self.pending_color = False
 
-        # بازیکنی که باید رنگ Wild را انتخاب کند
         self.pending_color_player = None
 
 
@@ -62,30 +55,29 @@ class UnoGame:
     def start(self):
 
         if len(self.players) < 2:
-
             return False
 
         if len(self.players) > 4:
-
             return False
 
         self.started = True
+        self.finished = False
+        self.winner = None
 
         # --------------------------------------
-        # دادن 7 کارت به هر بازیکن
+        # 7 کارت برای هر بازیکن
         # --------------------------------------
 
         for _ in range(7):
 
             for player in self.players:
 
-                card = self.deck.draw()
+                card = self._draw_one()
 
-                if card is not None:
+                if card is None:
+                    return False
 
-                    self.hands[player].append(
-                        card
-                    )
+                self.hands[player].append(card)
 
         # --------------------------------------
         # کارت اول زمین
@@ -93,13 +85,12 @@ class UnoGame:
 
         while True:
 
-            card = self.deck.draw()
+            card = self._draw_one()
 
             if card is None:
-
                 return False
 
-            # برای شروع +4 نباشد
+            # شروع با +4 ممنوع
             if card.card_type == WILD_DRAW_FOUR:
 
                 self.deck.cards.insert(
@@ -111,11 +102,8 @@ class UnoGame:
 
                 continue
 
-            self.discard.append(
-                card
-            )
+            self.discard.append(card)
 
-            # اگر Wild باشد، رنگ فعلی مشخص نیست
             if card.card_type == WILD:
 
                 self.current_color = None
@@ -136,7 +124,6 @@ class UnoGame:
     def current_player(self):
 
         if not self.players:
-
             return None
 
         return self.players[
@@ -151,7 +138,6 @@ class UnoGame:
     def top_card(self):
 
         if not self.discard:
-
             return None
 
         return self.discard[-1]
@@ -170,7 +156,28 @@ class UnoGame:
 
 
     # ==========================================
-    # بررسی کارت قابل بازی
+    # پیدا کردن کارت با ID
+    # ==========================================
+
+    def find_card_index(
+        self,
+        player,
+        card_id
+    ):
+
+        hand = self.hand(player)
+
+        for index, card in enumerate(hand):
+
+            if card.card_id == card_id:
+
+                return index
+
+        return None
+
+
+    # ==========================================
+    # بررسی کارت
     # ==========================================
 
     def can_play(
@@ -179,7 +186,6 @@ class UnoGame:
         card_index
     ):
 
-        # بازی تمام شده
         if self.finished:
 
             return (
@@ -187,7 +193,6 @@ class UnoGame:
                 "🏁 بازی تمام شده است."
             )
 
-        # در انتظار انتخاب رنگ
         if self.pending_color:
 
             return (
@@ -195,7 +200,6 @@ class UnoGame:
                 "🎨 ابتدا رنگ کارت Wild را انتخاب کن."
             )
 
-        # نوبت بازیکن
         if player != self.current_player():
 
             return (
@@ -229,15 +233,12 @@ class UnoGame:
 
         if card.card_type == WILD_DRAW_FOUR:
 
-            # در قانون استاندارد، اگر کارت هم‌رنگ
-            # قابل بازی داشته باشی +4 مجاز نیست.
             for other in hand:
 
                 if other.card_type in (
                     WILD,
                     WILD_DRAW_FOUR
                 ):
-
                     continue
 
                 if other.color == self.current_color:
@@ -251,7 +252,7 @@ class UnoGame:
             return True, None
 
         # --------------------------------------
-        # Wild معمولی
+        # Wild
         # --------------------------------------
 
         if card.card_type == WILD:
@@ -279,7 +280,35 @@ class UnoGame:
 
 
     # ==========================================
-    # بازی کردن کارت
+    # بازی کارت با ID
+    # ==========================================
+
+    def play_card_by_id(
+        self,
+        player,
+        card_id
+    ):
+
+        index = self.find_card_index(
+            player,
+            card_id
+        )
+
+        if index is None:
+
+            return {
+                "success": False,
+                "message": "❌ این کارت دیگر در دستت نیست."
+            }
+
+        return self.play_card(
+            player,
+            index
+        )
+
+
+    # ==========================================
+    # بازی کارت
     # ==========================================
 
     def play_card(
@@ -304,9 +333,7 @@ class UnoGame:
             card_index
         )
 
-        self.discard.append(
-            card
-        )
+        self.discard.append(card)
 
         self.last_draw.pop(
             player,
@@ -314,15 +341,12 @@ class UnoGame:
         )
 
         # --------------------------------------
-        # UNO
+        # اگر به یک کارت رسید
         # --------------------------------------
 
         if len(self.hands[player]) == 1:
 
-            # هنوز باید UNO گفته شود
-            self.uno_called.discard(
-                player
-            )
+            self.uno_called.discard(player)
 
         # --------------------------------------
         # برنده
@@ -331,9 +355,7 @@ class UnoGame:
         if len(self.hands[player]) == 0:
 
             self.finished = True
-
             self.started = False
-
             self.winner = player
 
             return {
@@ -356,8 +378,6 @@ class UnoGame:
 
             self.pending_color_player = player
 
-            # برای +4 بازیکن بعدی 4 کارت می‌گیرد،
-            # اما بعد از انتخاب رنگ.
             if card.card_type == WILD_DRAW_FOUR:
 
                 next_player = self.next_player()
@@ -397,15 +417,10 @@ class UnoGame:
         card
     ):
 
-        # --------------------------------------
-        # Reverse
-        # --------------------------------------
-
         if card.card_type == REVERSE:
 
             self.direction *= -1
 
-            # در بازی دو نفره Reverse مثل Skip است
             if len(self.players) == 2:
 
                 self.advance_turn()
@@ -417,20 +432,12 @@ class UnoGame:
 
             return "reverse"
 
-        # --------------------------------------
-        # Skip
-        # --------------------------------------
-
         if card.card_type == SKIP:
 
             self.advance_turn()
             self.advance_turn()
 
             return "skip"
-
-        # --------------------------------------
-        # +2
-        # --------------------------------------
 
         if card.card_type == DRAW_TWO:
 
@@ -445,17 +452,13 @@ class UnoGame:
 
             return "draw_two"
 
-        # --------------------------------------
-        # کارت عادی
-        # --------------------------------------
-
         self.advance_turn()
 
         return "normal"
 
 
     # ==========================================
-    # انتخاب رنگ Wild
+    # انتخاب رنگ
     # ==========================================
 
     def choose_color(
@@ -482,8 +485,10 @@ class UnoGame:
 
             return {
                 "success": False,
-                "message": "❌ فقط بازیکنی که Wild گذاشته "
-                           "می‌تواند رنگ را انتخاب کند."
+                "message": (
+                    "❌ فقط بازیکنی که Wild گذاشته "
+                    "می‌تواند رنگ را انتخاب کند."
+                )
             }
 
         self.current_color = color
@@ -492,7 +497,6 @@ class UnoGame:
 
         self.pending_color_player = None
 
-        # بعد از انتخاب رنگ، نوبت نفر بعد
         self.advance_turn()
 
         return {
@@ -508,7 +512,6 @@ class UnoGame:
     def next_player(self):
 
         if not self.players:
-
             return None
 
         index = (
@@ -526,7 +529,6 @@ class UnoGame:
     def advance_turn(self):
 
         if not self.players:
-
             return
 
         self.current_player_index = (
@@ -552,16 +554,11 @@ class UnoGame:
             card = self._draw_one()
 
             if card is None:
-
                 break
 
-            self.hands[player].append(
-                card
-            )
+            self.hands[player].append(card)
 
-            drawn.append(
-                card
-            )
+            drawn.append(card)
 
         self.last_draw[player] = drawn
 
@@ -569,7 +566,7 @@ class UnoGame:
 
 
     # ==========================================
-    # Draw یک کارت
+    # Draw برای بازیکن
     # ==========================================
 
     def draw_for_player(
@@ -612,29 +609,12 @@ class UnoGame:
 
         card = cards[0]
 
-        # --------------------------------------
-        # آیا کارت قابل بازی است؟
-        # --------------------------------------
+        playable = card_matches(
+            card,
+            self.top_card(),
+            self.current_color
+        )
 
-        playable = False
-
-        if card.card_type == WILD:
-
-            playable = True
-
-        elif card.card_type == WILD_DRAW_FOUR:
-
-            playable = True
-
-        else:
-
-            playable = card_matches(
-                card,
-                self.top_card(),
-                self.current_color
-            )
-
-        # اگر قابل بازی نیست، نوبت رد شود
         if not playable:
 
             self.advance_turn()
@@ -669,21 +649,15 @@ class UnoGame:
 
     def _rebuild_deck(self):
 
-        # حداقل کارت روی زمین را نگه می‌داریم
         if len(self.discard) <= 1:
-
             return
 
         top = self.discard[-1]
 
         old_cards = self.discard[:-1]
 
-        self.discard = [
-            top
-        ]
+        self.discard = [top]
 
-        # اگر کارت Wild بوده، رنگ انتخاب شده
-        # همچنان معتبر می‌ماند.
         self.deck.cards.extend(
             old_cards
         )
@@ -700,9 +674,7 @@ class UnoGame:
         player
     ):
 
-        hand = self.hand(
-            player
-        )
+        hand = self.hand(player)
 
         if len(hand) != 1:
 
@@ -711,9 +683,7 @@ class UnoGame:
                 "message": "❌ الان موقع گفتن UNO نیست."
             }
 
-        self.uno_called.add(
-            player
-        )
+        self.uno_called.add(player)
 
         return {
             "success": True
