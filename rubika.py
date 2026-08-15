@@ -55,7 +55,7 @@ def call_api(
         response = session.post(
             BASE_URL + method,
             json=data,
-            timeout=(5, 20)
+            timeout=(20, 20)
         )
 
         result = response.json()
