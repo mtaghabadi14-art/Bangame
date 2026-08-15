@@ -333,7 +333,19 @@ class UnoGame:
             card_index
         )
 
-        self.discard.append(card)
+        self.discard.append(
+            card
+        )
+
+        # --------------------------------------
+        # بروزرسانی رنگ فعلی
+        # --------------------------------------
+
+        if card.card_type not in (
+            WILD,
+            WILD_DRAW_FOUR
+        ):
+            self.current_color = card.color
 
         self.last_draw.pop(
             player,
