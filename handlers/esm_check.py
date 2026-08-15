@@ -575,6 +575,80 @@ def return_to_cafe(
 
 
 # ==========================================
+# تأیید پایان بازی
+# ==========================================
+
+def vote_exit_result(
+    room,
+    player
+):
+
+    if player not in room.players:
+        return True
+
+    votes = room.data.setdefault(
+        "exit_votes",
+        set()
+    )
+
+    # قبلاً رأی داده
+    if player in votes:
+
+        send_message(
+            player,
+            "✅ قبلاً اعلام کردی که نتیجه قانونیه."
+        )
+
+        return True
+
+    # ثبت رأی
+    votes.add(player)
+
+    remaining = len(room.players) - len(votes)
+
+    if remaining > 0:
+
+        send_message(
+            player,
+            (
+                "✅ رأی تو ثبت شد.\n\n"
+                f"⏳ منتظر {remaining} بازیکن دیگر..."
+            )
+        )
+
+        return True
+
+    # ======================================
+    # همه تأیید کردند
+    # ======================================
+
+    players = room.players.copy()
+
+    for p in players:
+
+        send_message(
+            p,
+            "✅ همه بازیکنان نتیجه را تأیید کردند!\n\n"
+            "🎮 اتاق بسته شد.\n"
+            "☕ برگشت به کافه بازی..."
+        )
+
+    # حذف کامل اتاق
+    delete_room(
+        room.room_id
+    )
+
+    # برگشت همه به کافه
+    for p in players:
+
+        room_menu(
+            p
+        )
+
+    return True
+
+
+# ==========================================
 # نمایش نتیجه
 # ==========================================
 
@@ -700,8 +774,8 @@ def show_result(room):
                 ],
                 [
                     {
-                        "id": "esm_return_cafe",
-                        "text": "🏠 بازگشت به کافه بازی"
+                        "id": "esm_exit_result",
+                        "text": "✅ قانونیه"
                     }
                 ]
             ]

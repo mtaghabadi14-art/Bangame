@@ -312,15 +312,15 @@ def handle(
 
         return True
 
-    # --------------------------------------
-    # بازگشت به کافه بازی
-    # --------------------------------------
+    # ==========================================
+    # تأیید نتیجه
+    # ==========================================
 
-    if text == "🏠 بازگشت به کافه بازی":
+    if text == "✅ قانونیه":
 
-        from handlers.esm_check import return_to_cafe
+        from handlers.esm_check import vote_exit_result
 
-        return_to_cafe(
+        vote_exit_result(
             room,
             player
         )
