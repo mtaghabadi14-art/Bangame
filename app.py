@@ -417,12 +417,14 @@ async def receive_update(request: Request):
                     }
 
 
-                # ==========================================
-                # UNO
-                # ==========================================
+            # ==========================================
+            # UNO
+            # ==========================================
 
-                if (
-                    room.game == "uno"
+            if room.game == "uno":
+
+                if button_id and (
+                    button_id.startswith("uno_")
                 ):
 
                     uno_handler.handle(

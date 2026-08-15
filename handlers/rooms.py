@@ -9,16 +9,18 @@ from handlers.menu import (
 from handlers import tictactoe
 from handlers import rps
 from handlers import esm_famil
-from handlers.memory_online_buttons import memory_lobby_menu
-from handlers import uno
+
+from handlers.memory_online_buttons import (
+    memory_lobby_menu
+)
 
 from rooms.manager import (
     create_room,
     join_room,
-    leave_room,
     get_player_room,
     delete_room
 )
+
 
 # ==========================================
 # انتظار کد اتاق
@@ -33,12 +35,16 @@ waiting_for_room_code = set()
 
 def open_room_menu(chat_id):
 
-    room_menu(chat_id)
+    room_menu(
+        chat_id
+    )
 
 
 def open_create_room(chat_id):
 
-    create_room_menu(chat_id)
+    create_room_menu(
+        chat_id
+    )
 
 
 # ==========================================
@@ -68,6 +74,7 @@ def create_rps_room(chat_id):
         f"✅ اتاق سنگ کاغذ قیچی ساخته شد.\n\n"
         f"🔑 کد اتاق: {room.room_id}\n"
         f"👥 1 / 2 بازیکن\n\n"
+        f"📨 این کد را برای دوستت بفرست.\n"
         f"⏳ منتظر بازیکن دوم..."
     )
 
@@ -99,6 +106,7 @@ def create_tictactoe_room(chat_id):
         f"⭕ اتاق دوز ساخته شد.\n\n"
         f"🔑 کد اتاق: {room.room_id}\n"
         f"👥 1 / 2 بازیکن\n\n"
+        f"📨 این کد را برای دوستت بفرست.\n"
         f"⏳ منتظر بازیکن دوم..."
     )
 
@@ -125,13 +133,16 @@ def create_esm_famil_room(chat_id):
 
         return
 
-    # نمایش Lobby به میزبان
     esm_lobby_menu(
         chat_id,
         room,
         is_host=True
     )
 
+
+# ==========================================
+# ساخت اتاق حافظه آنلاین
+# ==========================================
 
 def create_memory_online_room(chat_id):
 
@@ -180,8 +191,17 @@ def create_uno_room(chat_id):
 
         return
 
-    uno.show_lobby(
-        room
+    # فعلاً Lobby اولیه UNO را از همین‌جا
+    # به صورت پیام ساده نمایش می‌دهیم.
+    # دکمه شروع بعداً توسط handlers/uno مدیریت می‌شود.
+
+    send_message(
+        chat_id,
+        f"🃏 اتاق UNO ساخته شد! 🔥\n\n"
+        f"🔑 کد اتاق: {room.room_id}\n"
+        f"👥 بازیکنان: 1 / 4\n\n"
+        f"📨 کد اتاق را برای دوستانت بفرست.\n"
+        f"⏳ منتظر بازیکنان..."
     )
 
 
@@ -191,7 +211,9 @@ def create_uno_room(chat_id):
 
 def request_join(chat_id):
 
-    waiting_for_room_code.add(chat_id)
+    waiting_for_room_code.add(
+        chat_id
+    )
 
     send_message(
         chat_id,
@@ -203,27 +225,45 @@ def request_join(chat_id):
 # دریافت کد اتاق
 # ==========================================
 
-def receive_room_code(chat_id, code):
+def receive_room_code(
+    chat_id,
+    code
+):
 
-    # اگر کاربر برگشت زد
-    if code in [
+    # --------------------------------------
+    # برگشت
+    # --------------------------------------
+
+    if code in (
         "⬅️ برگشت",
         "⬅️ برگشت به منوی اصلی",
         "⬅️ برگشت به اتاق بازی"
-    ]:
+    ):
 
-        waiting_for_room_code.discard(chat_id)
+        waiting_for_room_code.discard(
+            chat_id
+        )
 
         return False
+
+    # --------------------------------------
+    # کاربر منتظر کد نیست
+    # --------------------------------------
 
     if chat_id not in waiting_for_room_code:
 
         return False
 
-    waiting_for_room_code.remove(chat_id)
+    waiting_for_room_code.remove(
+        chat_id
+    )
+
+    # --------------------------------------
+    # ورود به اتاق
+    # --------------------------------------
 
     room = join_room(
-        code,
+        code.strip().upper(),
         chat_id
     )
 
@@ -236,24 +276,38 @@ def receive_room_code(chat_id, code):
 
         return True
 
+    # ======================================
+    # UNO
+    # ======================================
 
+    if room.game == "uno":
 
-    # ==========================================
-    # اسم و فامیل → ورود به Lobby
-    # ==========================================
+        from handlers.uno import show_lobby
+
+        # Lobby برای همه بازیکنان
+        show_lobby(
+            room
+        )
+
+        return True
+
+    # ======================================
+    # اسم و فامیل
+    # ======================================
 
     if room.game == "esm_famil":
 
         from handlers.esm_famil import show_lobby
 
-        show_lobby(room)
+        show_lobby(
+            room
+        )
 
         return True
 
-
-    # ==========================================
-    # حافظه آنلاین → ورود به Lobby
-    # ==========================================
+    # ======================================
+    # حافظه آنلاین
+    # ======================================
 
     if room.game == "memory_online":
 
@@ -262,38 +316,29 @@ def receive_room_code(chat_id, code):
             memory_lobby_menu(
                 player,
                 room,
-                is_host=(player == room.host)
+                is_host=(
+                    player == room.host
+                )
             )
 
         return True
 
-    # ==========================================
-    # UNO → ورود به Lobby
-    # ==========================================
-
-    if room.game == "uno":
-
-        uno.show_lobby(
-            room
-        )
-
-        return True
-
-    # ==========================================
-    # بازی‌های 2 نفره → شروع خودکار
-    # ==========================================
+    # ======================================
+    # اطلاع به بازیکنان
+    # ======================================
 
     for player in room.players:
 
         send_message(
             player,
             f"🎉 بازیکن جدید وارد شد.\n"
-            f"👥 {len(room.players)} / {room.max_players}"
+            f"👥 {len(room.players)} / "
+            f"{room.max_players}"
         )
 
-    # ==========================================
+    # ======================================
     # دوز
-    # ==========================================
+    # ======================================
 
     if room.game == "tictactoe":
 
@@ -304,77 +349,17 @@ def receive_room_code(chat_id, code):
                 "🔥 بازی دوز شروع شد!"
             )
 
-        tictactoe.start(room)
-
-    # ==========================================
-    # سنگ کاغذ قیچی
-    # ==========================================
-
-    elif room.game == "rps":
-
-        for player in room.players:
-
-            send_message(
-                player,
-                "✂️ بازی سنگ کاغذ قیچی شروع شد!"
-            )
-
-        rps.start(room)
-
-    return True
-
-    # ==========================================
-    # اسم و فامیل
-    # ==========================================
-
-    if room.game == "esm_famil":
-
-        # اطلاع به همه بازیکنان
-        for player in room.players:
-
-            esm_lobby_menu(
-                player,
-                room,
-                is_host=(player == room.host)
-            )
-
-        # ❗ بازی اینجا شروع نمی‌شود
-        # فقط Lobby به‌روزرسانی می‌شود.
+        tictactoe.start(
+            room
+        )
 
         return True
 
-    # ==========================================
-    # اطلاع به بازیکنان بازی‌های ۲ نفره
-    # ==========================================
+    # ======================================
+    # سنگ کاغذ قیچی
+    # ======================================
 
-    for player in room.players:
-
-        send_message(
-            player,
-            f"🎉 بازیکن دوم وارد شد.\n"
-            f"👥 {len(room.players)} / {room.max_players}"
-        )
-
-    # ==========================================
-    # شروع خودکار دوز
-    # ==========================================
-
-    if room.game == "tictactoe":
-
-        for player in room.players:
-
-            send_message(
-                player,
-                "🔥 بازی دوز شروع شد!"
-            )
-
-        tictactoe.start(room)
-
-    # ==========================================
-    # شروع خودکار سنگ کاغذ قیچی
-    # ==========================================
-
-    elif room.game == "rps":
+    if room.game == "rps":
 
         for player in room.players:
 
@@ -383,7 +368,11 @@ def receive_room_code(chat_id, code):
                 "✂️ بازی سنگ کاغذ قیچی شروع شد!"
             )
 
-        rps.start(room)
+        rps.start(
+            room
+        )
+
+        return True
 
     return True
 
@@ -394,7 +383,9 @@ def receive_room_code(chat_id, code):
 
 def start_esm_famil_room(chat_id):
 
-    room = get_player_room(chat_id)
+    room = get_player_room(
+        chat_id
+    )
 
     if room is None:
 
@@ -405,7 +396,10 @@ def start_esm_famil_room(chat_id):
 
         return
 
+    # --------------------------------------
     # فقط میزبان
+    # --------------------------------------
+
     if chat_id != room.host:
 
         send_message(
@@ -415,7 +409,10 @@ def start_esm_famil_room(chat_id):
 
         return
 
+    # --------------------------------------
     # حداقل بازیکن
+    # --------------------------------------
+
     if len(room.players) < room.min_players:
 
         send_message(
@@ -426,7 +423,10 @@ def start_esm_famil_room(chat_id):
 
         return
 
-    # اگر بازی قبلاً شروع شده
+    # --------------------------------------
+    # بازی قبلاً شروع شده
+    # --------------------------------------
+
     if room.started:
 
         send_message(
@@ -436,9 +436,9 @@ def start_esm_famil_room(chat_id):
 
         return
 
-    # ==========================================
-    # شروع واقعی بازی
-    # ==========================================
+    # --------------------------------------
+    # شروع بازی
+    # --------------------------------------
 
     room.started = True
 
@@ -449,7 +449,9 @@ def start_esm_famil_room(chat_id):
             "🎉 بازی اسم و فامیل شروع شد!"
         )
 
-    esm_famil.start(room)
+    esm_famil.start(
+        room
+    )
 
 
 # ==========================================
@@ -458,7 +460,9 @@ def start_esm_famil_room(chat_id):
 
 def exit_room(chat_id):
 
-    room = get_player_room(chat_id)
+    room = get_player_room(
+        chat_id
+    )
 
     if room is None:
 
@@ -470,18 +474,31 @@ def exit_room(chat_id):
         return
 
     other_players = [
-        p for p in room.players
-        if p != chat_id
+        player
+        for player in room.players
+        if player != chat_id
     ]
+
+    # --------------------------------------
+    # حذف اتاق
+    # --------------------------------------
 
     delete_room(
         room.room_id
     )
 
+    # --------------------------------------
+    # پیام خروج
+    # --------------------------------------
+
     send_message(
         chat_id,
         "🚪 از اتاق خارج شدی."
     )
+
+    # --------------------------------------
+    # اطلاع سایر بازیکنان
+    # --------------------------------------
 
     for player in other_players:
 
