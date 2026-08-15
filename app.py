@@ -447,8 +447,14 @@ async def receive_update(request: Request):
 
             if room.game == "puzzle_online":
 
+                # --------------------------------------
                 # شروع بازی
-                if text == "▶️ شروع پازل":
+                # --------------------------------------
+
+                if (
+                    text == "▶️ شروع پازل"
+                    or button_id == "puzzle_start"
+                ):
 
                     puzzle_online_handler.start_game(
                         room,
@@ -459,9 +465,13 @@ async def receive_update(request: Request):
                         "ok": True
                     }
 
+                # --------------------------------------
                 # خروج
+                # --------------------------------------
+
                 if (
                     text == "🚪 خروج از بازی"
+                    or text == "🚪 خروج از اتاق"
                     or button_id == "puzzle_exit"
                 ):
 
@@ -474,7 +484,10 @@ async def receive_update(request: Request):
                         "ok": True
                     }
 
+                # --------------------------------------
                 # جواب سؤال
+                # --------------------------------------
+
                 if room.started and text:
 
                     puzzle_online_handler.receive_answer(
@@ -486,7 +499,6 @@ async def receive_update(request: Request):
                     return {
                         "ok": True
                     }
-
 
         # ==========================================
         # /start

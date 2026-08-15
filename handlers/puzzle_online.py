@@ -71,7 +71,6 @@ def show_lobby(room):
 
         buttons = []
 
-        # فقط میزبان دکمه شروع دارد
         if player == room.host:
 
             if len(room.players) >= room.min_players:
@@ -106,7 +105,6 @@ def start_game(
     chat_id
 ):
 
-    # فقط میزبان
     if chat_id != room.host:
 
         send_message(
@@ -116,7 +114,6 @@ def start_game(
 
         return
 
-    # حداقل بازیکن
     if len(room.players) < room.min_players:
 
         send_message(
@@ -127,7 +124,6 @@ def start_game(
 
         return
 
-    # بازی قبلاً شروع شده
     if room.started:
 
         send_message(
@@ -137,12 +133,10 @@ def start_game(
 
         return
 
-    # ساخت بازی
     game = create_puzzle_game(
         room
     )
 
-    # شروع
     if not game.start():
 
         remove_puzzle_game(
@@ -158,7 +152,6 @@ def start_game(
 
     room.started = True
 
-    # اطلاع شروع
     for player in room.players:
 
         send_message(
@@ -166,7 +159,6 @@ def start_game(
             "🧩 پازل چندنفره شروع شد! 🔥"
         )
 
-    # نمایش سؤال اول
     render_question(
         room
     )
@@ -267,7 +259,7 @@ def render_question(room):
 
 
 # ==========================================
-# بررسی و نمایش نتیجه دور
+# پایان دور
 # ==========================================
 
 def finish_round(room):
@@ -279,7 +271,6 @@ def finish_round(room):
     if game is None:
         return
 
-    # اگر بازی تمام شده
     if game.finished:
 
         finish_game(
@@ -289,7 +280,6 @@ def finish_round(room):
 
         return
 
-    # رفتن سؤال بعدی
     if not game.finish_round():
 
         finish_game(
@@ -299,7 +289,6 @@ def finish_round(room):
 
         return
 
-    # سؤال جدید
     render_question(
         room
     )
@@ -353,19 +342,15 @@ def finish_game(
             nickname = "بازیکن"
 
         if index == 1:
-
             icon = "🥇"
 
         elif index == 2:
-
             icon = "🥈"
 
         elif index == 3:
-
             icon = "🥉"
 
         else:
-
             icon = "👤"
 
         text += (
@@ -373,7 +358,6 @@ def finish_game(
             f"{score} امتیاز\n"
         )
 
-    # بازی اتاق تمام شده
     room.started = False
 
     for player in room.players:
@@ -442,7 +426,7 @@ def exit_game(
 
 
 # ==========================================
-# دریافت جواب متنی
+# دریافت جواب
 # ==========================================
 
 def receive_answer(
@@ -456,11 +440,9 @@ def receive_answer(
     )
 
     if game is None:
-
         return False
 
     if game.finished:
-
         return True
 
     result = game.answer(
@@ -477,10 +459,6 @@ def receive_answer(
 
         return True
 
-    # --------------------------------------
-    # جواب صحیح
-    # --------------------------------------
-
     if result["correct"]:
 
         send_message(
@@ -489,20 +467,12 @@ def receive_answer(
             "+1 امتیاز"
         )
 
-    # --------------------------------------
-    # جواب غلط
-    # --------------------------------------
-
     else:
 
         send_message(
             chat_id,
             "❌ جواب اشتباه بود!"
         )
-
-    # --------------------------------------
-    # آیا همه جواب داده‌اند؟
-    # --------------------------------------
 
     if game.everyone_answered():
 
@@ -512,7 +482,6 @@ def receive_answer(
 
     else:
 
-        # فقط وضعیت همان بازیکن را آپدیت می‌کنیم
         send_keypad(
             chat_id,
             build_question_text(
@@ -542,10 +511,6 @@ def handle(
     button_id
 ):
 
-    # --------------------------------------
-    # خروج
-    # --------------------------------------
-
     if button_id == EXIT_ID:
 
         exit_game(
@@ -554,10 +519,6 @@ def handle(
         )
 
         return True
-
-    # --------------------------------------
-    # شروع
-    # --------------------------------------
 
     if button_id == START_ID:
 

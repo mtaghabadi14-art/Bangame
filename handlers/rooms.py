@@ -1,4 +1,4 @@
-from rubika import send_message
+from rubika import send_message, send_keypad
 
 from handlers.menu import (
     create_room_menu,
@@ -192,10 +192,6 @@ def create_uno_room(chat_id):
 
         return
 
-    # فعلاً Lobby اولیه UNO را از همین‌جا
-    # به صورت پیام ساده نمایش می‌دهیم.
-    # دکمه شروع بعداً توسط handlers/uno مدیریت می‌شود.
-
     send_message(
         chat_id,
         f"🃏 اتاق UNO ساخته شد! 🔥\n\n"
@@ -205,7 +201,10 @@ def create_uno_room(chat_id):
         f"⏳ منتظر بازیکنان..."
     )
 
-#ساخت اتاق پازل آنلاین 
+
+# ==========================================
+# ساخت اتاق پازل آنلاین
+# ==========================================
 
 def create_puzzle_online_room(chat_id):
 
@@ -309,8 +308,19 @@ def receive_room_code(
 
         from handlers.uno import show_lobby
 
-        # Lobby برای همه بازیکنان
         show_lobby(
+            room
+        )
+
+        return True
+
+    # ======================================
+    # پازل چندنفره
+    # ======================================
+
+    if room.game == "puzzle_online":
+
+        puzzle_online.show_lobby(
             room
         )
 
@@ -421,10 +431,6 @@ def start_esm_famil_room(chat_id):
 
         return
 
-    # --------------------------------------
-    # فقط میزبان
-    # --------------------------------------
-
     if chat_id != room.host:
 
         send_message(
@@ -433,10 +439,6 @@ def start_esm_famil_room(chat_id):
         )
 
         return
-
-    # --------------------------------------
-    # حداقل بازیکن
-    # --------------------------------------
 
     if len(room.players) < room.min_players:
 
@@ -448,10 +450,6 @@ def start_esm_famil_room(chat_id):
 
         return
 
-    # --------------------------------------
-    # بازی قبلاً شروع شده
-    # --------------------------------------
-
     if room.started:
 
         send_message(
@@ -460,10 +458,6 @@ def start_esm_famil_room(chat_id):
         )
 
         return
-
-    # --------------------------------------
-    # شروع بازی
-    # --------------------------------------
 
     room.started = True
 
@@ -504,26 +498,14 @@ def exit_room(chat_id):
         if player != chat_id
     ]
 
-    # --------------------------------------
-    # حذف اتاق
-    # --------------------------------------
-
     delete_room(
         room.room_id
     )
-
-    # --------------------------------------
-    # پیام خروج
-    # --------------------------------------
 
     send_message(
         chat_id,
         "🚪 از اتاق خارج شدی."
     )
-
-    # --------------------------------------
-    # اطلاع سایر بازیکنان
-    # --------------------------------------
 
     for player in other_players:
 
