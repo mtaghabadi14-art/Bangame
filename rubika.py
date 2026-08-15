@@ -55,10 +55,8 @@ def call_api(
         response = session.post(
             BASE_URL + method,
             json=data,
-            timeout=(2, 10)
+            timeout=(5, 20)
         )
-
-        response.raise_for_status()
 
         result = response.json()
 
@@ -81,20 +79,43 @@ def call_api(
 
         return result
 
-    except requests.exceptions.Timeout:
+    except requests.exceptions.ConnectTimeout:
 
         print(
-            f"⏱️ {method} → TIMEOUT"
+            f"⏱️ {method} → CONNECT TIMEOUT"
         )
 
         return {
-            "status": "TIMEOUT"
+            "status": "TIMEOUT",
+            "error": "connect_timeout"
         }
 
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.ReadTimeout:
 
         print(
-            f"❌ {method} → ERROR: {e}"
+            f"⏱️ {method} → READ TIMEOUT"
+        )
+
+        return {
+            "status": "TIMEOUT",
+            "error": "read_timeout"
+        }
+
+    except requests.exceptions.ConnectionError as e:
+
+        print(
+            f"🔌 {method} → CONNECTION ERROR"
+        )
+
+        return {
+            "status": "ERROR",
+            "error": str(e)
+        }
+
+    except requests.exceptions.HTTPError as e:
+
+        print(
+            f"🌐 {method} → HTTP ERROR"
         )
 
         return {
@@ -105,7 +126,7 @@ def call_api(
     except Exception as e:
 
         print(
-            f"❌ {method} → ERROR: {e}"
+            f"❌ {method} → ERROR"
         )
 
         return {
