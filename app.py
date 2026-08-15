@@ -137,7 +137,6 @@ async def receive_update(request: Request):
 
         data = await request.json()
 
-
         update = data.get(
             "update",
             {}
@@ -163,7 +162,10 @@ async def receive_update(request: Request):
         button_id = aux_data.get("button_id")
 
         if button_id:
-            print(f"🔘 {button_id}")
+
+            print(
+                f"🔘 {button_id}"
+            )
 
 
         # ==========================================
@@ -243,6 +245,7 @@ async def receive_update(request: Request):
                     "ok": True
                 }
 
+
             # --------------------------------------
             # خانه‌های زمین
             # --------------------------------------
@@ -260,8 +263,13 @@ async def receive_update(request: Request):
 
                     try:
 
-                        row = int(parts[1])
-                        col = int(parts[2])
+                        row = int(
+                            parts[1]
+                        )
+
+                        col = int(
+                            parts[2]
+                        )
 
                         minesweeper_handler.handle_cell(
                             chat_id,
@@ -276,6 +284,7 @@ async def receive_update(request: Request):
                 return {
                     "ok": True
                 }
+
 
         # ==========================================
         # ورود به اتاق
@@ -295,7 +304,9 @@ async def receive_update(request: Request):
         # بازی‌های آنلاین
         # ==========================================
 
-        room = get_player_room(chat_id)
+        room = get_player_room(
+            chat_id
+        )
 
         if room:
 
@@ -303,7 +314,10 @@ async def receive_update(request: Request):
             # دوز
             # ==========================================
 
-            if room.game == "tictactoe" and room.started:
+            if (
+                room.game == "tictactoe"
+                and room.started
+            ):
 
                 ttt_handler.handle(
                     room,
@@ -322,7 +336,10 @@ async def receive_update(request: Request):
             # سنگ کاغذ قیچی
             # ==========================================
 
-            if room.game == "rps" and room.started:
+            if (
+                room.game == "rps"
+                and room.started
+            ):
 
                 rps_handler.handle(
                     room,
@@ -411,7 +428,9 @@ async def receive_update(request: Request):
                 None
             )
 
-            main_menu(chat_id)
+            main_menu(
+                chat_id
+            )
 
             return {
                 "ok": True
@@ -424,12 +443,16 @@ async def receive_update(request: Request):
 
         elif text == "🎮 بازی‌ها":
 
-            games_menu(chat_id)
+            games_menu(
+                chat_id
+            )
 
             return {
                 "ok": True
             }
-                # ==========================================
+
+
+        # ==========================================
         # پروفایل
         # ==========================================
 
@@ -667,6 +690,7 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
+
         # ==========================================
         # مین‌روب
         # ==========================================
@@ -785,7 +809,9 @@ async def receive_update(request: Request):
             return {
                 "ok": True
             }
-                # ==========================================
+
+
+        # ==========================================
         # کامل کردن کلمه
         # ==========================================
 
@@ -983,7 +1009,7 @@ async def receive_update(request: Request):
                 ]
             ]
 
-            result = send_keypad(
+            send_keypad(
                 chat_id,
                 "🧪 تست Chat Keypad\n\nاین کیپد باید قابل ویرایش باشد.",
                 buttons
@@ -1009,8 +1035,6 @@ async def receive_update(request: Request):
                 "ok": True
             }
 
-
-     
 
         # ==========================================
         # پیام ناشناخته
