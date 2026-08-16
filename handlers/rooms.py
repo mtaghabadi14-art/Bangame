@@ -1,5 +1,4 @@
 from rubika import send_message, send_keypad
-from handlers.rooms import open_room_menu
 
 from handlers.menu import (
     create_room_menu,
