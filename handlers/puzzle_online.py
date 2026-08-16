@@ -358,6 +358,28 @@ def finish_game(
             f"{score} امتیاز\n"
         )
 
+    # ==========================================
+    # جواب‌های صحیح مسابقه
+    # ==========================================
+
+    text += (
+        "\n━━━━━━━━━━━━━━━━━━\n"
+        "📝 جواب‌های صحیح مسابقه:\n\n"
+    )
+
+    for index, question in enumerate(
+        game.questions[:game.TOTAL_ROUNDS],
+        start=1
+    ):
+
+        text += (
+            f"{index}️⃣ {question['answer']}\n"
+        )
+
+    text += (
+        "\n━━━━━━━━━━━━━━━━━━\n"
+    )
+
     room.started = False
 
     for player in room.players:
