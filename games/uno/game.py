@@ -39,14 +39,18 @@ class UnoGame:
 
         self.winner = None
 
+        # بازیکنانی که UNO گفته‌اند
         self.uno_called = set()
+
+        # بازیکنانی که به ۱ کارت رسیده‌اند
+        # و هنوز باید مشخص شود UNO گفته‌اند یا نه
+        self.uno_pending = set()
 
         self.last_draw = {}
 
         self.pending_color = False
 
         self.pending_color_player = None
-
 
     # ==========================================
     # شروع بازی
@@ -64,9 +68,18 @@ class UnoGame:
         self.finished = False
         self.winner = None
 
+        self.uno_called.clear()
+        self.uno_pending.clear()
+
+        self.discard.clear()
+        self.last_draw.clear()
+
         # --------------------------------------
         # 7 کارت برای هر بازیکن
         # --------------------------------------
+
+        for player in self.players:
+            self.hands[player] = []
 
         for _ in range(7):
 
@@ -116,7 +129,6 @@ class UnoGame:
 
         return True
 
-
     # ==========================================
     # بازیکن فعلی
     # ==========================================
@@ -130,7 +142,6 @@ class UnoGame:
             self.current_player_index
         ]
 
-
     # ==========================================
     # کارت روی زمین
     # ==========================================
@@ -142,7 +153,6 @@ class UnoGame:
 
         return self.discard[-1]
 
-
     # ==========================================
     # دست بازیکن
     # ==========================================
@@ -153,7 +163,6 @@ class UnoGame:
             player,
             []
         )
-
 
     # ==========================================
     # پیدا کردن کارت با ID
@@ -170,11 +179,9 @@ class UnoGame:
         for index, card in enumerate(hand):
 
             if card.card_id == card_id:
-
                 return index
 
         return None
-
 
     # ==========================================
     # بررسی کارت
@@ -224,7 +231,6 @@ class UnoGame:
         top = self.top_card()
 
         if top is None:
-
             return True, None
 
         # --------------------------------------
@@ -256,7 +262,6 @@ class UnoGame:
         # --------------------------------------
 
         if card.card_type == WILD:
-
             return True, None
 
         # --------------------------------------
@@ -277,7 +282,6 @@ class UnoGame:
             "باید رنگ یا عدد/نوع کارت "
             "با کارت روی زمین مطابقت داشته باشد."
         )
-
 
     # ==========================================
     # بازی کارت با ID
@@ -306,6 +310,37 @@ class UnoGame:
             index
         )
 
+    # ==========================================
+    # بررسی جریمه UNO
+    # ==========================================
+
+    def _check_uno_penalties(self):
+
+        penalties = []
+
+        for player in list(self.uno_pending):
+
+            # اگر UNO گفته باشد، جریمه نمی‌شود
+            if player in self.uno_called:
+
+                self.uno_pending.discard(player)
+                continue
+
+            # هنوز UNO نگفته → دو کارت جریمه
+            cards = self.draw_cards(
+                player,
+                2
+            )
+
+            self.uno_pending.discard(player)
+
+            penalties.append({
+                "player": player,
+                "cards": cards,
+                "count": len(cards)
+            })
+
+        return penalties
 
     # ==========================================
     # بازی کارت
@@ -329,6 +364,13 @@ class UnoGame:
                 "message": error
             }
 
+        # --------------------------------------
+        # قبل از حرکت بازیکن فعلی،
+        # جریمه UNO بازیکنان قبلی بررسی می‌شود
+        # --------------------------------------
+
+        penalties = self._check_uno_penalties()
+
         card = self.hands[player].pop(
             card_index
         )
@@ -338,13 +380,14 @@ class UnoGame:
         )
 
         # --------------------------------------
-        # بروزرسانی رنگ فعلی
+        # بروزرسانی رنگ
         # --------------------------------------
 
         if card.card_type not in (
             WILD,
             WILD_DRAW_FOUR
         ):
+
             self.current_color = card.color
 
         self.last_draw.pop(
@@ -353,12 +396,16 @@ class UnoGame:
         )
 
         # --------------------------------------
-        # اگر به یک کارت رسید
+        # رسیدن به یک کارت
         # --------------------------------------
 
         if len(self.hands[player]) == 1:
 
             self.uno_called.discard(player)
+
+            self.uno_pending.add(
+                player
+            )
 
         # --------------------------------------
         # برنده
@@ -374,7 +421,8 @@ class UnoGame:
                 "success": True,
                 "card": card,
                 "winner": player,
-                "effect": "win"
+                "effect": "win",
+                "uno_penalties": penalties
             }
 
         # --------------------------------------
@@ -402,7 +450,8 @@ class UnoGame:
             return {
                 "success": True,
                 "card": card,
-                "effect": "choose_color"
+                "effect": "choose_color",
+                "uno_penalties": penalties
             }
 
         # --------------------------------------
@@ -416,9 +465,9 @@ class UnoGame:
         return {
             "success": True,
             "card": card,
-            "effect": effect
+            "effect": effect,
+            "uno_penalties": penalties
         }
-
 
     # ==========================================
     # اعمال اثر کارت
@@ -468,7 +517,6 @@ class UnoGame:
 
         return "normal"
 
-
     # ==========================================
     # انتخاب رنگ
     # ==========================================
@@ -503,6 +551,13 @@ class UnoGame:
                 )
             }
 
+        # --------------------------------------
+        # قبل از رفتن به نوبت بعد،
+        # جریمه UNO بررسی می‌شود
+        # --------------------------------------
+
+        penalties = self._check_uno_penalties()
+
         self.current_color = color
 
         self.pending_color = False
@@ -513,9 +568,9 @@ class UnoGame:
 
         return {
             "success": True,
-            "color": color
+            "color": color,
+            "uno_penalties": penalties
         }
-
 
     # ==========================================
     # نفر بعدی
@@ -533,7 +588,6 @@ class UnoGame:
 
         return self.players[index]
 
-
     # ==========================================
     # جلو بردن نوبت
     # ==========================================
@@ -547,7 +601,6 @@ class UnoGame:
             self.current_player_index
             + self.direction
         ) % len(self.players)
-
 
     # ==========================================
     # Draw
@@ -568,14 +621,17 @@ class UnoGame:
             if card is None:
                 break
 
-            self.hands[player].append(card)
+            self.hands[player].append(
+                card
+            )
 
-            drawn.append(card)
+            drawn.append(
+                card
+            )
 
         self.last_draw[player] = drawn
 
         return drawn
-
 
     # ==========================================
     # Draw برای بازیکن
@@ -607,6 +663,12 @@ class UnoGame:
                 "message": "⏳ هنوز نوبت تو نیست."
             }
 
+        # --------------------------------------
+        # بازیکن قبلی فرصت UNO داشته
+        # --------------------------------------
+
+        penalties = self._check_uno_penalties()
+
         cards = self.draw_cards(
             player,
             1
@@ -634,9 +696,9 @@ class UnoGame:
         return {
             "success": True,
             "card": card,
-            "playable": playable
+            "playable": playable,
+            "uno_penalties": penalties
         }
-
 
     # ==========================================
     # Draw از Deck
@@ -647,13 +709,11 @@ class UnoGame:
         card = self.deck.draw()
 
         if card is not None:
-
             return card
 
         self._rebuild_deck()
 
         return self.deck.draw()
-
 
     # ==========================================
     # ساخت دوباره Deck
@@ -676,7 +736,6 @@ class UnoGame:
 
         self.deck.shuffle()
 
-
     # ==========================================
     # UNO
     # ==========================================
@@ -695,12 +754,17 @@ class UnoGame:
                 "message": "❌ الان موقع گفتن UNO نیست."
             }
 
-        self.uno_called.add(player)
+        self.uno_called.add(
+            player
+        )
+
+        self.uno_pending.discard(
+            player
+        )
 
         return {
             "success": True
         }
-
 
     # ==========================================
     # بررسی UNO
@@ -712,7 +776,6 @@ class UnoGame:
     ):
 
         return player in self.uno_called
-
 
     # ==========================================
     # وضعیت بازی

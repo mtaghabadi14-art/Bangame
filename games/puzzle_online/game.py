@@ -240,23 +240,53 @@ class PuzzleGame:
         if text is None:
             return ""
 
-        text = str(
-            text
-        ).strip().lower()
+        text = str(text).strip().lower()
 
-        # یکسان‌سازی حروف فارسی
-        text = text.replace(
-            "ي",
-            "ی"
-        )
+        # --------------------------------------
+        # یکسان‌سازی حروف فارسی و عربی
+        # --------------------------------------
 
-        text = text.replace(
-            "ك",
-            "ک"
-        )
+        text = text.replace("ي", "ی")
+        text = text.replace("ى", "ی")
 
-        # حذف فاصله‌های اضافی
-        text = " ".join(
+        text = text.replace("ك", "ک")
+
+        # --------------------------------------
+        # تبدیل اعداد فارسی به انگلیسی
+        # --------------------------------------
+
+        persian_digits = "۰۱۲۳۴۵۶۷۸۹"
+        english_digits = "0123456789"
+
+        for persian, english in zip(
+            persian_digits,
+            english_digits
+        ):
+            text = text.replace(
+                persian,
+                english
+            )
+
+        # --------------------------------------
+        # تبدیل اعداد عربی به انگلیسی
+        # --------------------------------------
+
+        arabic_digits = "٠١٢٣٤٥٦٧٨٩"
+
+        for arabic, english in zip(
+            arabic_digits,
+            english_digits
+        ):
+            text = text.replace(
+                arabic,
+                english
+            )
+
+        # --------------------------------------
+        # حذف تمام فاصله‌ها
+        # --------------------------------------
+
+        text = "".join(
             text.split()
         )
 

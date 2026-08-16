@@ -11,7 +11,6 @@ from games.uno.cards import (
     GREEN,
     BLUE,
     YELLOW,
-    WILD,
     WILD_DRAW_FOUR,
     COLOR_EMOJIS
 )
@@ -60,10 +59,6 @@ def show_lobby(room):
 
         buttons = []
 
-        # --------------------------------------
-        # دکمه شروع فقط برای میزبان
-        # --------------------------------------
-
         if player == room.host:
 
             if len(room.players) >= room.min_players:
@@ -75,20 +70,12 @@ def show_lobby(room):
                     }
                 ])
 
-        # --------------------------------------
-        # خروج
-        # --------------------------------------
-
         buttons.append([
             {
                 "id": EXIT_ID,
                 "text": "🚪 خروج از اتاق"
             }
         ])
-
-        # --------------------------------------
-        # متن
-        # --------------------------------------
 
         text = (
             "🃏 UNO — VEXON\n\n"
@@ -116,10 +103,6 @@ def show_lobby(room):
                 text += (
                     f"{index}. 🃏 {nickname}\n"
                 )
-
-        # --------------------------------------
-        # وضعیت
-        # --------------------------------------
 
         if len(room.players) < room.min_players:
 
@@ -228,11 +211,8 @@ def build_game_text(
     top = game.top_card()
 
     if top:
-
         top_text = top.display()
-
     else:
-
         top_text = "🃏"
 
     current_color = (
@@ -284,7 +264,7 @@ def build_game_text(
 
 
 # ==========================================
-# ساخت Keypad دست بازیکن
+# ساخت Keypad
 # ==========================================
 
 def build_game_keypad(
@@ -297,10 +277,6 @@ def build_game_keypad(
     hand = game.hand(
         player
     )
-
-    # --------------------------------------
-    # کارت‌ها
-    # --------------------------------------
 
     row = []
 
@@ -328,10 +304,6 @@ def build_game_keypad(
             row
         )
 
-    # --------------------------------------
-    # Draw
-    # --------------------------------------
-
     buttons.append([
         {
             "id": DRAW_ID,
@@ -339,21 +311,12 @@ def build_game_keypad(
         }
     ])
 
-    # --------------------------------------
-    # UNO
-    # همیشه نمایش داده می‌شود
-    # --------------------------------------
-
     buttons.append([
         {
             "id": UNO_ID,
             "text": "🃏 UNO!"
         }
     ])
-
-    # --------------------------------------
-    # خروج
-    # --------------------------------------
 
     buttons.append([
         {
@@ -376,7 +339,6 @@ def render_all(room):
     )
 
     if game is None:
-
         return
 
     for player in room.players:
@@ -442,6 +404,42 @@ def show_color_menu(
         "🎨 رنگ کارت Wild را انتخاب کن:",
         buttons
     )
+
+
+# ==========================================
+# نمایش جریمه‌های UNO
+# ==========================================
+
+def show_uno_penalties(
+    room,
+    penalties
+):
+
+    for penalty in penalties:
+
+        player = penalty["player"]
+        count = penalty["count"]
+
+        if count <= 0:
+            continue
+
+        nickname = get_player_name(
+            player
+        )
+
+        text = (
+            f"⚠️ جریمه UNO!\n\n"
+            f"👤 {nickname}\n"
+            f"❌ قبل از نوبت بعدی UNO نگفت.\n\n"
+            f"🎴 {count} کارت جریمه دریافت کرد."
+        )
+
+        for target in room.players:
+
+            send_message(
+                target,
+                text
+            )
 
 
 # ==========================================
@@ -512,18 +510,10 @@ def exit_uno(
         if player != chat_id
     ]
 
-    # --------------------------------------
-    # حذف کی‌پد بازی برای فرد خارج‌شده
-    # --------------------------------------
-
     remove_keypad(
         chat_id,
         "🚪 از UNO خارج شدی."
     )
-
-    # --------------------------------------
-    # حذف بازی
-    # --------------------------------------
 
     remove_uno_game(
         room
@@ -531,19 +521,11 @@ def exit_uno(
 
     room.started = False
 
-    # --------------------------------------
-    # حذف اتاق
-    # --------------------------------------
-
     from rooms.manager import delete_room
 
     delete_room(
         room.room_id
     )
-
-    # --------------------------------------
-    # اطلاع به بازیکنان دیگر
-    # --------------------------------------
 
     for player in other_players:
 
@@ -551,10 +533,6 @@ def exit_uno(
             player,
             f"⚠️ {nickname} از اتاق UNO خارج شد."
         )
-
-    # --------------------------------------
-    # رفتن به کافه بازی
-    # --------------------------------------
 
     from handlers.menu import room_menu
 
@@ -591,7 +569,7 @@ def handle(
         return
 
     # ======================================
-    # اگر بازی هنوز شروع نشده
+    # اگر بازی شروع نشده
     # ======================================
 
     if game is None:
@@ -665,6 +643,14 @@ def handle(
             f"{COLOR_EMOJIS[color]}"
         )
 
+        show_uno_penalties(
+            room,
+            result.get(
+                "uno_penalties",
+                []
+            )
+        )
+
         render_all(
             room
         )
@@ -694,10 +680,6 @@ def handle(
             chat_id
         )
 
-        # ----------------------------------
-        # اطلاع به همه
-        # ----------------------------------
-
         for player in room.players:
 
             send_message(
@@ -726,6 +708,14 @@ def handle(
             )
 
             return
+
+        show_uno_penalties(
+            room,
+            result.get(
+                "uno_penalties",
+                []
+            )
+        )
 
         card = result["card"]
 
@@ -795,6 +785,18 @@ def handle(
             )
 
             return
+
+        # ----------------------------------
+        # جریمه UNO
+        # ----------------------------------
+
+        show_uno_penalties(
+            room,
+            result.get(
+                "uno_penalties",
+                []
+            )
+        )
 
         card = result["card"]
 
