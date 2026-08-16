@@ -1,6 +1,5 @@
 from rubika import send_message, send_keypad
 from database import get_nickname
-from handlers.rooms import open_room_menu
 
 from games.puzzle_online.manager import (
     get_puzzle_game,
@@ -420,6 +419,7 @@ def exit_game(
 ):
 
     from rooms.manager import delete_room
+    from handlers.rooms import open_room_menu
 
     other_players = [
         player
