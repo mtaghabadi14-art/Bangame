@@ -1,6 +1,11 @@
 from fastapi import FastAPI, Request
+
+import os
+import re
 import time
 import socket
+import requests
+
 
 from handlers import leaderboard
 from handlers import typing as typing_handler
@@ -13,18 +18,22 @@ from handlers import nickname
 
 from handlers import minesweeper as minesweeper_handler
 
+
 from handlers.menu import (
     main_menu,
     games_menu
 )
 
+
 from games import reaction as reaction_game
+
 
 from rubika import (
     send_message,
     send_keypad,
     edit_chat_keypad
 )
+
 
 from database import (
     create_tables,
@@ -34,11 +43,13 @@ from database import (
     set_nickname
 )
 
+
 from handlers.profile import (
     show_profile,
     show_wallet,
     daily
 )
+
 
 from handlers.guess import (
     start as guess_start,
@@ -46,11 +57,13 @@ from handlers.guess import (
     exit as guess_exit
 )
 
+
 from handlers.dice import (
     start as dice_start,
     roll as dice_roll,
     exit as dice_exit
 )
+
 
 from handlers.rooms import (
     open_room_menu,
@@ -66,6 +79,7 @@ from handlers.rooms import (
     exit_room
 )
 
+
 from handlers import (
     tictactoe as ttt_handler,
     rps as rps_handler,
@@ -75,6 +89,7 @@ from handlers import (
     puzzle_online as puzzle_online_handler
 )
 
+
 from rooms.manager import get_player_room
 
 
@@ -83,6 +98,19 @@ from rooms.manager import get_player_room
 # ==========================================
 
 app = FastAPI()
+
+
+# ==========================================
+# VEXON API
+# ==========================================
+
+VEXON_API_KEY = os.getenv(
+    "VEXON_RUBIKA_API_KEY"
+)
+
+VEXON_LINK_URL = (
+    "https://s.vexongame.workers.dev/api/rubika/link"
+)
 
 
 # ==========================================
@@ -124,15 +152,120 @@ def home():
 
 
 # ==========================================
+# اطلاعات بازیکن برای VEXON
+# ==========================================
+
+@app.get("/vexon/player")
+def vexon_player(
+    request: Request,
+    rubika_user_id: str
+):
+
+    api_key = request.headers.get(
+        "X-VEXON-API-KEY"
+    )
+
+    if (
+        not VEXON_API_KEY
+        or api_key != VEXON_API_KEY
+    ):
+
+        return {
+            "success": False,
+            "message": "Unauthorized"
+        }
+
+
+    try:
+
+        user = get_user(
+            rubika_user_id
+        )
+
+
+        if not user:
+
+            return {
+                "success": False,
+                "message": "Player not found"
+            }
+
+
+        (
+            user_id,
+            nickname,
+            title,
+            coins,
+            level,
+            xp,
+            typing_games,
+            typing_best_time,
+            typing_best_wpm
+
+        ) = user
+
+
+        return {
+
+            "success": True,
+
+            "player": {
+
+                "user_id": str(
+                    user_id
+                ),
+
+                "nickname": nickname,
+
+                "title": title,
+
+                "coins": coins,
+
+                "level": level,
+
+                "xp": xp,
+
+                "typing_games":
+                    typing_games,
+
+                "typing_best_time":
+                    typing_best_time,
+
+                "typing_best_wpm":
+                    typing_best_wpm
+
+            }
+
+        }
+
+
+    except Exception as error:
+
+        print(
+            "VEXON PLAYER ERROR:",
+            error
+        )
+
+
+        return {
+            "success": False,
+            "message": "Database error"
+        }
+
+
+# ==========================================
 # دریافت Update
 # ==========================================
 
 @app.post("/receiveUpdate")
-async def receive_update(request: Request):
+async def receive_update(
+    request: Request
+):
 
     start_time = time.time()
 
     chat_id = None
+
 
     try:
 
@@ -142,29 +275,49 @@ async def receive_update(request: Request):
 
         data = await request.json()
 
+
         update = data.get(
             "update",
             {}
         )
 
-        if update.get("type") != "NewMessage":
+
+        if (
+            update.get("type")
+            != "NewMessage"
+        ):
 
             return {
                 "ok": True
             }
 
-        chat_id = update["chat_id"]
 
-        msg = update["new_message"]
+        chat_id = update[
+            "chat_id"
+        ]
+
+
+        msg = update[
+            "new_message"
+        ]
+
 
         text = msg.get(
             "text",
             ""
         ).strip()
 
-        aux_data = msg.get("aux_data") or {}
 
-        button_id = aux_data.get("button_id")
+        aux_data = (
+            msg.get("aux_data")
+            or {}
+        )
+
+
+        button_id = aux_data.get(
+            "button_id"
+        )
+
 
         if button_id:
 
@@ -174,24 +327,207 @@ async def receive_update(request: Request):
 
 
         # ==========================================
+        # اتصال حساب VEXON
+        #
+        # این قسمت باید قبل از Nickname باشد
+        # تا کد ۶ رقمی به عنوان لقب ذخیره نشود.
+        # ==========================================
+
+        link_match = re.fullmatch(
+            r"(?:VEXON[-\s:]*)?(\d{6})",
+            text,
+            re.IGNORECASE
+        )
+
+
+        if link_match:
+
+            link_code = (
+                link_match.group(1)
+            )
+
+
+            if not VEXON_API_KEY:
+
+                print(
+                    "❌ VEXON_RUBIKA_API_KEY is not configured."
+                )
+
+
+                send_message(
+                    chat_id,
+                    "❌ اتصال VEXON در حال حاضر فعال نیست."
+                )
+
+
+                return {
+                    "ok": True
+                }
+
+
+            try:
+
+                response = requests.post(
+
+                    VEXON_LINK_URL,
+
+                    json={
+                        "code": link_code,
+
+                        "rubika_user_id":
+                            str(chat_id)
+                    },
+
+                    headers={
+                        "X-VEXON-API-KEY":
+                            VEXON_API_KEY
+                    },
+
+                    timeout=10
+                )
+
+
+                try:
+
+                    result = response.json()
+
+                except ValueError:
+
+                    result = {
+                        "success": False,
+                        "message":
+                            "پاسخ نامعتبر از VEXON دریافت شد."
+                    }
+
+
+                if (
+                    response.ok
+                    and result.get("success")
+                ):
+
+                    send_message(
+
+                        chat_id,
+
+                        "✅ حساب VEXON با موفقیت "
+                        "به روبیکا متصل شد!\n\n"
+                        "از این به بعد اطلاعات "
+                        "بازیکنت در سایت VEXON "
+                        "با حساب روبیکای تو "
+                        "هماهنگ می‌شود. 💚"
+
+                    )
+
+
+                else:
+
+                    send_message(
+
+                        chat_id,
+
+                        "❌ "
+                        + result.get(
+
+                            "message",
+
+                            "کد اتصال معتبر نیست."
+
+                        )
+
+                    )
+
+
+            except requests.exceptions.Timeout:
+
+                print(
+                    "⏱️ VEXON LINK → TIMEOUT"
+                )
+
+
+                send_message(
+
+                    chat_id,
+
+                    "⏱️ ارتباط با VEXON "
+                    "به پایان رسید. دوباره تلاش کن."
+
+                )
+
+
+            except requests.exceptions.RequestException as error:
+
+                print(
+                    "🔌 VEXON LINK ERROR:",
+                    error
+                )
+
+
+                send_message(
+
+                    chat_id,
+
+                    "❌ ارتباط با سرور VEXON برقرار نشد."
+
+                )
+
+
+            except Exception as error:
+
+                print(
+                    "❌ VEXON LINK ERROR:",
+                    error
+                )
+
+
+                send_message(
+
+                    chat_id,
+
+                    "❌ خطایی هنگام اتصال حساب رخ داد."
+
+                )
+
+
+            return {
+                "ok": True
+            }
+
+
+        # ==========================================
         # بررسی کاربر
         # ==========================================
 
         if chat_id not in user_cache:
 
-            user = get_user(chat_id)
+            user = get_user(
+                chat_id
+            )
+
 
             if not user:
 
-                add_user(chat_id)
+                add_user(
+                    chat_id
+                )
 
-                user = get_user(chat_id)
+                user = get_user(
+                    chat_id
+                )
 
-            user_cache.add(chat_id)
 
-            if user and user[1]:
+            user_cache.add(
+                chat_id
+            )
 
-                nickname_cache.add(chat_id)
+
+            if (
+                user
+                and user[1]
+            ):
+
+                nickname_cache.add(
+                    chat_id
+                )
 
 
         # ==========================================
@@ -203,7 +539,10 @@ async def receive_update(request: Request):
             and chat_id not in nickname_cache
         ):
 
-            nickname.start(chat_id)
+            nickname.start(
+                chat_id
+            )
+
 
             return {
                 "ok": True
@@ -217,7 +556,11 @@ async def receive_update(request: Request):
                 text
             )
 
-            nickname_cache.add(chat_id)
+
+            nickname_cache.add(
+                chat_id
+            )
+
 
             return {
                 "ok": True
@@ -246,6 +589,7 @@ async def receive_update(request: Request):
                     button_id
                 )
 
+
                 return {
                     "ok": True
                 }
@@ -262,7 +606,10 @@ async def receive_update(request: Request):
                 )
             ):
 
-                parts = button_id.split("_")
+                parts = button_id.split(
+                    "_"
+                )
+
 
                 if len(parts) == 3:
 
@@ -276,15 +623,18 @@ async def receive_update(request: Request):
                             parts[2]
                         )
 
+
                         minesweeper_handler.handle_cell(
                             chat_id,
                             row,
                             col
                         )
 
+
                     except ValueError:
 
                         pass
+
 
                 return {
                     "ok": True
@@ -313,6 +663,7 @@ async def receive_update(request: Request):
             chat_id
         )
 
+
         if room:
 
             # ==========================================
@@ -328,9 +679,11 @@ async def receive_update(request: Request):
                     room,
                     chat_id,
                     {
-                        "button_id": button_id
+                        "button_id":
+                            button_id
                     }
                 )
+
 
                 return {
                     "ok": True
@@ -350,9 +703,11 @@ async def receive_update(request: Request):
                     room,
                     chat_id,
                     {
-                        "button_id": button_id
+                        "button_id":
+                            button_id
                     }
                 )
+
 
                 return {
                     "ok": True
@@ -363,13 +718,17 @@ async def receive_update(request: Request):
             # اسم و فامیل
             # ==========================================
 
-            if room.game == "esm_famil":
+            if (
+                room.game
+                == "esm_famil"
+            ):
 
                 esm_handler.handle(
                     room,
                     chat_id,
                     text
                 )
+
 
                 return {
                     "ok": True
@@ -380,26 +739,37 @@ async def receive_update(request: Request):
             # حافظه آنلاین
             # ==========================================
 
-            if room.game == "memory_online":
+            if (
+                room.game
+                == "memory_online"
+            ):
 
-                if text == "▶️ شروع بازی":
+                if (
+                    text ==
+                    "▶️ شروع بازی"
+                ):
 
                     memory_online_handler.start_by_host(
                         room,
                         chat_id
                     )
 
+
                     return {
                         "ok": True
                     }
 
 
-                if text == "🚪 خروج از بازی":
+                if (
+                    text ==
+                    "🚪 خروج از بازی"
+                ):
 
                     memory_online_handler.exit_game(
                         room,
                         chat_id
                     )
+
 
                     return {
                         "ok": True
@@ -414,6 +784,7 @@ async def receive_update(request: Request):
                         text
                     )
 
+
                     return {
                         "ok": True
                     }
@@ -423,10 +794,16 @@ async def receive_update(request: Request):
             # UNO
             # ==========================================
 
-            if room.game == "uno":
+            if (
+                room.game
+                == "uno"
+            ):
 
-                if button_id and (
-                    button_id.startswith("uno_")
+                if (
+                    button_id
+                    and button_id.startswith(
+                        "uno_"
+                    )
                 ):
 
                     uno_handler.handle(
@@ -435,25 +812,30 @@ async def receive_update(request: Request):
                         button_id
                     )
 
+
                     return {
                         "ok": True
                     }
-
 
 
             # ==========================================
             # پازل چندنفره
             # ==========================================
 
-            if room.game == "puzzle_online":
+            if (
+                room.game
+                == "puzzle_online"
+            ):
 
                 # --------------------------------------
                 # شروع بازی
                 # --------------------------------------
 
                 if (
-                    text == "▶️ شروع پازل"
-                    or button_id == "puzzle_start"
+                    text ==
+                    "▶️ شروع پازل"
+                    or button_id ==
+                    "puzzle_start"
                 ):
 
                     puzzle_online_handler.start_game(
@@ -461,18 +843,23 @@ async def receive_update(request: Request):
                         chat_id
                     )
 
+
                     return {
                         "ok": True
                     }
+
 
                 # --------------------------------------
                 # خروج
                 # --------------------------------------
 
                 if (
-                    text == "🚪 خروج از بازی"
-                    or text == "🚪 خروج از اتاق"
-                    or button_id == "puzzle_exit"
+                    text ==
+                    "🚪 خروج از بازی"
+                    or text ==
+                    "🚪 خروج از اتاق"
+                    or button_id ==
+                    "puzzle_exit"
                 ):
 
                     puzzle_online_handler.exit_game(
@@ -480,15 +867,20 @@ async def receive_update(request: Request):
                         chat_id
                     )
 
+
                     return {
                         "ok": True
                     }
+
 
                 # --------------------------------------
                 # جواب سؤال
                 # --------------------------------------
 
-                if room.started and text:
+                if (
+                    room.started
+                    and text
+                ):
 
                     puzzle_online_handler.receive_answer(
                         room,
@@ -496,9 +888,11 @@ async def receive_update(request: Request):
                         text
                     )
 
+
                     return {
                         "ok": True
                     }
+
 
         # ==========================================
         # /start
@@ -514,9 +908,11 @@ async def receive_update(request: Request):
                 None
             )
 
+
             main_menu(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -533,6 +929,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -548,6 +945,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -562,6 +960,7 @@ async def receive_update(request: Request):
             nickname.change_start(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -581,9 +980,11 @@ async def receive_update(request: Request):
                 110
             )
 
+
             show_profile(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -600,6 +1001,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -614,6 +1016,7 @@ async def receive_update(request: Request):
             daily(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -630,6 +1033,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -644,6 +1048,7 @@ async def receive_update(request: Request):
             open_create_room(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -660,6 +1065,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -674,6 +1080,7 @@ async def receive_update(request: Request):
             exit_room(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -690,6 +1097,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -701,6 +1109,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -711,6 +1120,7 @@ async def receive_update(request: Request):
             open_room_menu(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -727,6 +1137,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -741,6 +1152,7 @@ async def receive_update(request: Request):
             create_tictactoe_room(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -757,6 +1169,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -771,6 +1184,7 @@ async def receive_update(request: Request):
             create_memory_online_room(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -787,9 +1201,11 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
+
 
         # ==========================================
         # ساخت اتاق پازل چندنفره
@@ -800,6 +1216,7 @@ async def receive_update(request: Request):
             create_puzzle_online_room(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -816,6 +1233,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -831,6 +1249,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -838,13 +1257,15 @@ async def receive_update(request: Request):
 
         elif (
             chat_id in typing_handler.games
-            or chat_id in typing_handler.waiting_level
+            or chat_id in
+            typing_handler.waiting_level
         ):
 
             typing_handler.check(
                 chat_id,
                 text
             )
+
 
             return {
                 "ok": True
@@ -855,11 +1276,15 @@ async def receive_update(request: Request):
         # لیدربورد سرعت تایپ
         # ==========================================
 
-        elif text == "🏆 لیدربورد سرعت تایپ":
+        elif (
+            text ==
+            "🏆 لیدربورد سرعت تایپ"
+        ):
 
             leaderboard.typing(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -876,6 +1301,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -883,13 +1309,15 @@ async def receive_update(request: Request):
 
         elif (
             chat_id in math_game.games
-            or chat_id in math_game.waiting_level
+            or chat_id in
+            math_game.waiting_level
         ):
 
             math_game.check(
                 chat_id,
                 text
             )
+
 
             return {
                 "ok": True
@@ -906,6 +1334,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -913,13 +1342,15 @@ async def receive_update(request: Request):
 
         elif (
             chat_id in memory.games
-            or chat_id in memory.waiting_level
+            or chat_id in
+            memory.waiting_level
         ):
 
             memory.check(
                 chat_id,
                 text
             )
+
 
             return {
                 "ok": True
@@ -936,21 +1367,26 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
 
 
         elif (
-            chat_id in word_handler.games
-            or chat_id in word_handler.waiting_level
-            or text == "🔁 بازی مجدد"
+            chat_id in
+            word_handler.games
+            or chat_id in
+            word_handler.waiting_level
+            or text ==
+            "🔁 بازی مجدد"
         ):
 
             word_handler.check(
                 chat_id,
                 text
             )
+
 
             return {
                 "ok": True
@@ -967,6 +1403,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -978,6 +1415,7 @@ async def receive_update(request: Request):
                 chat_id,
                 text
             )
+
 
             return {
                 "ok": True
@@ -995,6 +1433,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -1002,25 +1441,33 @@ async def receive_update(request: Request):
 
         elif (
             chat_id in states
-            and states[chat_id].get("game") == "guess"
+            and states[chat_id].get(
+                "game"
+            ) == "guess"
         ):
 
-            if text == "🚪 خروج از بازی":
+            if (
+                text ==
+                "🚪 خروج از بازی"
+            ):
 
                 guess_exit(
                     states,
                     chat_id
                 )
 
+
                 return {
                     "ok": True
                 }
+
 
             guess_check(
                 states,
                 chat_id,
                 text
             )
+
 
             return {
                 "ok": True
@@ -1037,6 +1484,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -1048,6 +1496,7 @@ async def receive_update(request: Request):
                 chat_id
             )
 
+
             return {
                 "ok": True
             }
@@ -1058,6 +1507,7 @@ async def receive_update(request: Request):
             dice_exit(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -1073,6 +1523,7 @@ async def receive_update(request: Request):
             main_menu(
                 chat_id
             )
+
 
             return {
                 "ok": True
@@ -1090,15 +1541,24 @@ async def receive_update(request: Request):
         ):
 
             difficulty_map = {
-                "🟢 آسان": "easy",
-                "🟡 متوسط": "medium",
-                "🔴 سخت": "hard"
+
+                "🟢 آسان":
+                    "easy",
+
+                "🟡 متوسط":
+                    "medium",
+
+                "🔴 سخت":
+                    "hard"
+
             }
+
 
             minesweeper_handler.start(
                 chat_id,
                 difficulty_map[text]
             )
+
 
             return {
                 "ok": True
@@ -1109,42 +1569,76 @@ async def receive_update(request: Request):
         # تست Edit Chat Keypad
         # ==========================================
 
-        elif text == "🧪 تست ویرایش کیپد":
+        elif (
+            text ==
+            "🧪 تست ویرایش کیپد"
+        ):
 
             buttons = [
+
                 [
                     {
-                        "id": "test_1",
-                        "text": "🟦 دکمه اول"
+                        "id":
+                            "test_1",
+
+                        "text":
+                            "🟦 دکمه اول"
                     },
+
                     {
-                        "id": "test_2",
-                        "text": "🟥 دکمه دوم"
+                        "id":
+                            "test_2",
+
+                        "text":
+                            "🟥 دکمه دوم"
                     }
                 ]
+
             ]
 
+
             send_keypad(
+
                 chat_id,
-                "🧪 تست Chat Keypad\n\nاین کیپد باید قابل ویرایش باشد.",
+
+                "🧪 تست Chat Keypad\n\n"
+                "این کیپد باید قابل ویرایش باشد.",
+
                 buttons
+
             )
 
+
             edit_chat_keypad(
+
                 chat_id,
+
                 [
+
                     [
+
                         {
-                            "id": "test_1_new",
-                            "text": "✅ دکمه تغییر کرد"
+                            "id":
+                                "test_1_new",
+
+                            "text":
+                                "✅ دکمه تغییر کرد"
                         },
+
                         {
-                            "id": "test_2_new",
-                            "text": "🔵 دکمه دوم"
+                            "id":
+                                "test_2_new",
+
+                            "text":
+                                "🔵 دکمه دوم"
                         }
+
                     ]
+
                 ]
+
             )
+
 
             return {
                 "ok": True
@@ -1178,12 +1672,15 @@ async def receive_update(request: Request):
             "================================"
         )
 
+
         try:
 
-            send_message(
-                chat_id,
-                "❌ خطایی در ربات رخ داد."
-            )
+            if chat_id:
+
+                send_message(
+                    chat_id,
+                    "❌ خطایی در ربات رخ داد."
+                )
 
         except Exception:
 
@@ -1196,68 +1693,87 @@ async def receive_update(request: Request):
 
     end_time = time.time()
 
+
     print(
         f"⚡ Process Time: "
         f"{round(end_time - start_time, 3)} sec"
     )
+
 
     return {
         "ok": True
     }
 
 
+# ==========================================
+# تست اتصال روبیکا
+# ==========================================
 
 def test_rubika_connection():
 
     host = "botapi.rubika.ir"
 
-    try:
-        ip = socket.gethostbyname(host)
 
-        print(f"🌐 Rubika DNS → {ip}")
+    try:
+
+        ip = socket.gethostbyname(
+            host
+        )
+
+
+        print(
+            f"🌐 Rubika DNS → {ip}"
+        )
+
 
         sock = socket.create_connection(
-            (host, 443),
+            (
+                host,
+                443
+            ),
             timeout=10
         )
 
+
         sock.close()
 
-        print("🔗 Rubika HTTPS → CONNECTED")
+
+        print(
+            "🔗 Rubika HTTPS → CONNECTED"
+        )
+
 
         return True
 
+
     except socket.gaierror:
 
-        print("❌ Rubika DNS → FAILED")
+        print(
+            "❌ Rubika DNS → FAILED"
+        )
+
 
         return False
+
 
     except socket.timeout:
 
-        print("⏱️ Rubika HTTPS → TIMEOUT")
+        print(
+            "⏱️ Rubika HTTPS → TIMEOUT"
+        )
+
 
         return False
+
 
     except Exception:
 
-        print("❌ Rubika HTTPS → FAILED")
+        print(
+            "❌ Rubika HTTPS → FAILED"
+        )
+
 
         return False
-
-
-if __name__ == "__main__":
-
-    test_rubika_connection()
-
-    import uvicorn
-
-    uvicorn.run(
-        "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=False
-    )
 
 
 # ==========================================
@@ -1266,7 +1782,11 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
 
+    test_rubika_connection()
+
+
     import uvicorn
+
 
     uvicorn.run(
         "app:app",
