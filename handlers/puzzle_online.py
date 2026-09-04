@@ -49,7 +49,7 @@ def show_lobby(room):
                 )
 
         text = (
-            "🧩 پازل چندنفره — VEXON\n\n"
+            "🧩 پازل چندنفره — PGame\n\n"
             f"🔑 کد اتاق: {room.room_id}\n\n"
             f"👥 بازیکنان: "
             f"{len(room.players)} / "
@@ -194,7 +194,7 @@ def build_question_text(
     )
 
     text = (
-        "🧩 پازل چندنفره — VEXON\n\n"
+        "🧩 پازل چندنفره — PGame\n\n"
         f"📚 دسته: {question['category']}\n"
         f"🔢 سؤال {game.round_number()} "
         f"از {game.TOTAL_ROUNDS}\n\n"

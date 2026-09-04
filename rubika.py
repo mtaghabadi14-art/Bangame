@@ -5,7 +5,7 @@ from requests.adapters import HTTPAdapter
 
 
 # ==========================================
-# Vexon Rubika API
+# PGame Rubika API
 # ==========================================
 
 TOKEN = os.getenv("RUBIKA_TOKEN")

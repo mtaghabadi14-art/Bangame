@@ -79,6 +79,12 @@ from handlers.rooms import (
     exit_room
 )
 
+from handlers.pgame_connection import (
+    show_pgame_connection,
+    confirm_pgame_disconnect,
+    disconnect_pgame
+)
+
 
 from handlers import (
     tictactoe as ttt_handler,
@@ -409,10 +415,10 @@ async def receive_update(
 
                         chat_id,
 
-                        "✅ حساب VEXON با موفقیت "
+                        "✅ حساب PGame با موفقیت "
                         "به روبیکا متصل شد!\n\n"
                         "از این به بعد اطلاعات "
-                        "بازیکنت در سایت VEXON "
+                        "بازیکنت در سایت PGame "
                         "با حساب روبیکای تو "
                         "هماهنگ می‌شود. 💚"
 
@@ -929,6 +935,49 @@ async def receive_update(
                 chat_id
             )
 
+
+            return {
+                "ok": True
+            }
+
+        elif text == "🔗 مدیریت اتصال PGame":
+
+            show_pgame_connection(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
+        elif text == "🔴 قطع ارتباط با PGame":
+
+            confirm_pgame_disconnect(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
+        elif text == "✅ بله، قطع کن":
+
+            disconnect_pgame(
+                chat_id
+            )
+
+            return {
+                "ok": True
+            }
+
+
+        elif text == "❌ لغو":
+
+            show_profile(
+                chat_id
+            )
 
             return {
                 "ok": True

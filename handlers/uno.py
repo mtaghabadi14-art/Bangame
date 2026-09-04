@@ -78,7 +78,7 @@ def show_lobby(room):
         ])
 
         text = (
-            "🃏 UNO — VEXON\n\n"
+            "🃏 UNO — PGame\n\n"
             f"🔑 کد اتاق: {room.room_id}\n\n"
             f"👥 بازیکنان: "
             f"{len(room.players)} / "
@@ -231,7 +231,7 @@ def build_game_text(
     )
 
     text = (
-        "🃏 UNO — VEXON\n\n"
+        "🃏 UNO — PGame\n\n"
         f"🃏 روی زمین: {top_text}\n"
         f"🎨 رنگ فعلی: {current_color}\n"
         f"🎴 کارت‌های Deck: "

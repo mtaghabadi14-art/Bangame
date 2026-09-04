@@ -36,7 +36,7 @@ def build_status_text(game):
 
             return (
                 "🏆 بازی تمام شد!\n\n"
-                "💣 ماین‌یاب Vexon\n"
+                "💣 ماین‌یاب PGame\n"
                 f"{game['difficulty_name']}\n\n"
                 "🎉 تبریک! همه خانه‌های امن را باز کردی!\n\n"
                 f"💣 مین‌ها: {game['mine_count']}\n"
@@ -45,7 +45,7 @@ def build_status_text(game):
 
         return (
             "💥 BOOM!\n\n"
-            "💣 ماین‌یاب Vexon\n"
+            "💣 ماین‌یاب PGame\n"
             f"{game['difficulty_name']}\n\n"
             "💣 روی مین رفتی!\n\n"
             f"💣 مین‌ها: {game['mine_count']}\n"
@@ -59,7 +59,7 @@ def build_status_text(game):
     )
 
     return (
-        "🎮 ماین‌یاب Vexon\n\n"
+        "🎮 ماین‌یاب PGame\n\n"
         f"{game['difficulty_name']}\n"
         f"💣 مین‌ها: {game['mine_count']}\n"
         f"🚩 پرچم‌ها: {get_flag_count(game)}\n\n"
@@ -246,7 +246,7 @@ def show_difficulty_menu(
     send_keypad(
         chat_id,
         (
-            "💣 ماین‌یاب Vexon\n\n"
+            "💣 ماین‌یاب PGame\n\n"
             "🎯 سطح بازی را انتخاب کن:"
         ),
         buttons

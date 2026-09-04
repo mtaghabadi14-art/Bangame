@@ -1,4 +1,4 @@
-"""VEXON — Online Puzzle Question Bank"""
+"""PGame — Online Puzzle Question Bank"""
 
 QUESTIONS = [
     {
